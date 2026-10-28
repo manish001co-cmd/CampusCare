@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
+import hodRoutes from "./routes/hodRoutes.js";
 import studentRoutes from "./routes/studentRoutes.js";
 import { seedDatabase } from "./seed/seedUsers.js";
 
@@ -19,7 +20,15 @@ app.use(express.json());
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/hod", hodRoutes);
 app.use("/api/student", studentRoutes);
+
+app.use("/api", (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `API route not found: ${req.method} ${req.originalUrl}`,
+  });
+});
 
 app.get("/", (req, res) => {
   res.json({

@@ -44,20 +44,24 @@ export const initialUsers = [
 export async function seedDatabase() {
   try {
     console.log("Checking database users...");
-    const count = await User.countDocuments();
-    if (count > 0) {
-      console.log(`Database already has ${count} users. Seeding skipped.`);
-      return;
-    }
+    const userCount = await User.countDocuments();
+    const usersToSeed =
+      userCount === 0
+        ? initialUsers
+        : initialUsers.filter((userData) => userData.role === "hod");
 
-    console.log("Database is empty. Seeding default role-based users...");
-    for (const userData of initialUsers) {
+    for (const userData of usersToSeed) {
+      const existingUser = await User.findOne({ username: userData.username });
+      if (existingUser) {
+        continue;
+      }
+
       const user = new User(userData);
       await user.save();
       console.log(`Created [${userData.role.toUpperCase()}] user: username='${userData.username}'`);
     }
 
-    console.log("Database seeded successfully with all 4 roles!");
+    console.log("Default role-based users verified.");
   } catch (error) {
     console.error("Error seeding database:", error.message);
   }

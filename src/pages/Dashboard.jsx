@@ -1,6 +1,7 @@
 import { useParams, Navigate } from "react-router-dom";
 import StudentDashboard from "./StudentDashboard";
 import TeacherDashboard from "./TeacherDashboard";
+import HodDashboard from "./HodDashboard";
 
 export default function Dashboard() {
     const { role } = useParams();
@@ -11,6 +12,10 @@ export default function Dashboard() {
 
     if (role === "teacher") {
         return <TeacherDashboard />;
+    }
+
+    if (role === "hod") {
+        return <HodDashboard />;
     }
 
     if (!["student", "teacher", "hod", "admin"].includes(role)) {
