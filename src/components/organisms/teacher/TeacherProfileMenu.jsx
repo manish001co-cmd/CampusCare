@@ -26,15 +26,15 @@ export default function TeacherProfileMenu({ teacher, onLogout }) {
                 className="flex items-center gap-2 rounded-xl border border-[#d0e3f8] bg-white/80 px-3 py-1.5 shadow-sm transition hover:bg-blue-50"
             >
                 <Avatar
-                    name={teacher?.fullName || "Dilip Menariya"}
+                    name={teacher?.fullName || "Teacher"}
                     size="sm"
                 />
                 <div className="hidden text-left sm:block">
                     <p className="text-[11px] font-bold leading-tight text-slate-800">
-                        {teacher?.fullName || "Mr. Dilip Menariya"}
+                        {teacher?.fullName || "Teacher"}
                     </p>
                     <p className="text-[9px] text-slate-500">
-                        Faculty Mentor · CSE
+                        {teacher?.designation || teacher?.department || "Faculty"}
                     </p>
                 </div>
                 <ChevronDown size={12} className="text-slate-400" />

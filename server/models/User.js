@@ -47,41 +47,60 @@ const userSchema = new mongoose.Schema(
     },
     phone: {
       type: String,
-      default: "+91 98765 43210",
+      default: "",
       trim: true,
     },
     emergencyContact: {
       type: String,
-      default: "+91 98765 01234 (Guardian)",
+      default: "",
       trim: true,
     },
     preferredMode: {
       type: String,
-      default: "In-Person (Room 2B)",
+      default: "",
       trim: true,
     },
     bio: {
       type: String,
-      default: "Computer Science undergraduate interested in AI systems and wellness.",
+      default: "",
       trim: true,
     },
     semester: {
       type: String,
-      default: "Semester 5 (Year 3)",
+      default: "",
       trim: true,
     },
     mentor: {
       type: String,
-      default: "Mr. Dilip Menariya",
+      default: "",
       trim: true,
+    },
+    mentorId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    designation: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    office: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    specialization: {
+      type: String,
+      trim: true,
+      default: "",
     },
     gpa: {
       type: Number,
-      default: 8.6,
+      default: null,
     },
     attendance: {
       type: Number,
-      default: 92,
+      default: null,
     },
   },
   {

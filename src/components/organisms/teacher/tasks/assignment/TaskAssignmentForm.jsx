@@ -18,24 +18,19 @@ export default function TaskAssignmentForm({ students, onAddTask, onClose }) {
     const updateField = (field, value) =>
         setForm((current) => ({ ...current, [field]: value }));
 
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
         event.preventDefault();
-        if (!form.task.trim()) return;
+        if (!form.studentId || !form.task.trim() || !form.dueDate) return;
 
-        onAddTask({
-            id: `tsk-${Date.now()}`,
+        const saved = await onAddTask({
+            studentId: form.studentId,
             studentName: form.studentName,
             task: form.task,
-            assignedDate: new Date().toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-            }),
-            dueDate: form.dueDate || "TBD",
-            status: "Pending",
-            feedback: "Newly assigned.",
+            dueDate: form.dueDate,
+            feedback: "",
             priority: form.priority,
         });
+        if (!saved) return;
         setSuccessMsg(`Task assigned to ${form.studentName} successfully!`);
         setForm((current) => ({ ...current, task: "", dueDate: "" }));
         setTimeout(() => {

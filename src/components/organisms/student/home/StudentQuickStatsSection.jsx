@@ -1,7 +1,17 @@
 import { CheckCircle2 } from "lucide-react";
 import StatCard from "../../../molecules/StatCard";
 
-export default function StudentQuickStatsSection({ nextAppointment, tasks }) {
+export default function StudentQuickStatsSection({
+    nextAppointment,
+    tasks,
+    completedSessions,
+}) {
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const dueTodayCount = tasks.filter(
+        (task) => !task.completed && task.dueDate === today
+    ).length;
+
     return (
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
             <StatCard
@@ -21,12 +31,12 @@ export default function StudentQuickStatsSection({ nextAppointment, tasks }) {
             <StatCard
                 title="Open tasks"
                 value={tasks.filter((task) => !task.completed).length}
-                subtitle="1 due today"
+                subtitle={`${dueTodayCount} due today`}
             />
             <StatCard
-                title="Wellbeing check-in"
-                value="Complete"
-                subtitle="Last updated today"
+                title="Completed sessions"
+                value={completedSessions}
+                subtitle="Counselling sessions recorded"
             />
         </div>
     );

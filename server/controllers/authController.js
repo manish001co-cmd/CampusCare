@@ -16,6 +16,18 @@ function generateToken(user) {
   );
 }
 
+function serializeUser(user) {
+  return {
+    id: user._id,
+    username: user.username,
+    fullName: user.fullName,
+    role: user.role,
+    email: user.email,
+    department: user.department,
+    identifier: user.identifier,
+  };
+}
+
 // POST /api/auth/login
 export async function login(req, res) {
   try {
@@ -63,15 +75,7 @@ export async function login(req, res) {
       success: true,
       message: "Login successful!",
       token,
-      user: {
-        id: user._id,
-        username: user.username,
-        fullName: user.fullName,
-        role: user.role,
-        email: user.email,
-        department: user.department,
-        identifier: user.identifier,
-      },
+      user: serializeUser(user),
     });
   } catch (error) {
     console.error("Login error:", error);
@@ -79,6 +83,107 @@ export async function login(req, res) {
       success: false,
       message: "Server error during login. Please try again later.",
       error: error.message,
+    });
+  }
+}
+
+// POST /api/auth/register
+export async function registerStudent(req, res) {
+  try {
+    const { username, password, fullName, email, department, identifier } =
+      req.body;
+
+    if (
+      typeof username !== "string" ||
+      typeof password !== "string" ||
+      typeof fullName !== "string" ||
+      typeof department !== "string" ||
+      !username.trim() ||
+      !password ||
+      !fullName.trim() ||
+      !department.trim()
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Name, username, password, and department are required.",
+      });
+    }
+
+    const normalizedUsername = username.trim().toLowerCase();
+    if (normalizedUsername.length < 3) {
+      return res.status(400).json({
+        success: false,
+        message: "Username must be at least 3 characters long.",
+      });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 6 characters long.",
+      });
+    }
+
+    const normalizedEmail =
+      typeof email === "string" ? email.trim().toLowerCase() : "";
+    if (
+      normalizedEmail &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Enter a valid email address.",
+      });
+    }
+
+    const existingUser = await User.findOne({
+      username: normalizedUsername,
+    })
+      .select("_id")
+      .lean();
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        message: "That username is already in use.",
+      });
+    }
+
+    const user = await User.create({
+      username: normalizedUsername,
+      password,
+      fullName: fullName.trim(),
+      role: "student",
+      email: normalizedEmail,
+      department: department.trim(),
+      identifier:
+        typeof identifier === "string" && identifier.trim()
+          ? identifier.trim()
+          : undefined,
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Student account created successfully.",
+      token: generateToken(user),
+      user: serializeUser(user),
+    });
+  } catch (error) {
+    if (error?.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: "That username is already in use.",
+      });
+    }
+    if (error?.name === "ValidationError") {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    console.error("Student registration error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Unable to create your account right now. Please try again.",
     });
   }
 }

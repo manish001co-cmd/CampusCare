@@ -41,13 +41,13 @@ export default function TeacherSidebar({ activeTab, setActiveTab, teacher }) {
             {/* Bottom: Teacher profile */}
             <div className="rounded-xl border border-[#c8daf0] bg-white/70 p-3 backdrop-blur-sm">
                 <div className="flex items-center gap-3">
-                    <Avatar name={teacher?.fullName || "Dilip Menariya"} size="md" />
+                    <Avatar name={teacher?.fullName || "Teacher"} size="md" />
                     <div className="min-w-0">
                         <p className="text-[12px] font-bold text-slate-800 truncate">
-                            {teacher?.fullName || "Mr. Dilip Menariya"}
+                            {teacher?.fullName || "Teacher"}
                         </p>
                         <p className="text-[10px] text-slate-500 truncate">
-                            {teacher?.designation || "Assistant Professor · CSE"}
+                            {teacher?.designation || teacher?.department || "Faculty"}
                         </p>
                         <p className="text-[10px] text-[#1a56db] font-semibold mt-0.5">
                             Faculty Mentor

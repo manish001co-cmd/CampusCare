@@ -25,6 +25,10 @@ export default function StudentDashboardSections({
     onToggleTask,
     performance,
     nextAppointment,
+    recentActivities,
+    counsellors,
+    dashboardError,
+    onRetry,
     isBookingOpen,
     onOpenBooking,
     onCloseBooking,
@@ -35,6 +39,21 @@ export default function StudentDashboardSections({
 }) {
     return (
         <>
+            {dashboardError && (
+                <div
+                    role="alert"
+                    className="mx-8 mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"
+                >
+                    <span>{dashboardError}</span>
+                    <button
+                        type="button"
+                        onClick={onRetry}
+                        className="font-semibold underline"
+                    >
+                        Retry
+                    </button>
+                </div>
+            )}
             {activeTab === "Home" && (
                 <main className="p-8 max-w-6xl">
                     <GreetingSection fullName={profile.fullName} />
@@ -42,6 +61,9 @@ export default function StudentDashboardSections({
                     <StudentQuickStatsSection
                         nextAppointment={nextAppointment}
                         tasks={tasks}
+                        completedSessions={
+                            performance?.totalSessionsCompleted ?? 0
+                        }
                     />
                     <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
                         <UpcomingAppointmentSection
@@ -56,7 +78,7 @@ export default function StudentDashboardSections({
                             onManageTasks={() => setActiveTab("My tasks")}
                         />
                     </div>
-                    <RecentActivitySection />
+                    <RecentActivitySection activities={recentActivities} />
                 </main>
             )}
             {activeTab === "My profile" && (
@@ -89,11 +111,12 @@ export default function StudentDashboardSections({
                 setBookingForm={setBookingForm}
                 onSubmit={onBookingSubmit}
                 successMsg={bookingSuccessMsg}
-                mentorList={[
-                    `${profile.mentor} (Assigned Mentor · CSE)`,
-                    "Dr. Rajesh Kulkarni (HOD · CSE)",
-                    "Dr. Sneha Roy (Student Wellness Counselor)",
-                ]}
+                mentorList={counsellors.map((counsellor) => {
+                    const detail =
+                        counsellor.designation ||
+                        (counsellor.role === "hod" ? "HOD" : "Teacher");
+                    return `${counsellor.fullName} (${detail} · ${counsellor.department})`;
+                })}
             />
         </>
     );

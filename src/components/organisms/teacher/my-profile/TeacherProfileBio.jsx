@@ -4,7 +4,7 @@ export default function TeacherProfileBio({ bio }) {
             <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
                 Bio
             </p>
-            <p className="text-xs text-slate-700">{bio}</p>
+            <p className="text-xs text-slate-700">{bio || "Not recorded"}</p>
         </div>
     );
 }

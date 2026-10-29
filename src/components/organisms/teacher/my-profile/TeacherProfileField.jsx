@@ -7,7 +7,9 @@ export default function TeacherProfileField({ icon, label, value }) {
                     {label}
                 </span>
             </div>
-            <p className="text-xs font-medium text-slate-800">{value}</p>
+            <p className="text-xs font-medium text-slate-800">
+                {value || "Not recorded"}
+            </p>
         </div>
     );
 }

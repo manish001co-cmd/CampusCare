@@ -1,39 +1,76 @@
 import AttendanceChart from "./AttendanceChart";
 import ClassHealthChart from "./ClassHealthChart";
 
-export default function ClassPerformanceCharts({ students }) {
+export default function ClassPerformanceCharts({
+    students,
+    tasks,
+    requests,
+}) {
+    const recordedGpa = students
+        .map((student) => student.gpa)
+        .filter(Number.isFinite);
+    const recordedAttendance = students
+        .map((student) => student.attendance)
+        .filter(Number.isFinite);
+    const engagedStudents = new Set([
+        ...tasks.map((task) => task.studentName),
+        ...requests.map((request) => request.studentName),
+    ]);
+    const average = (values) =>
+        values.length
+            ? values.reduce((total, value) => total + value, 0) / values.length
+            : 0;
     const performanceData = students.map((student) => ({
         name: student.fullName.split(" ")[0],
         CGPA: student.gpa,
         Attendance: student.attendance,
         fill:
-            student.attendance < 75
+            student.attendance != null && student.attendance < 75
                 ? "#ef4444"
-                : student.attendance < 80
+                : student.attendance != null && student.attendance < 80
                   ? "#f59e0b"
                   : "#22c55e",
     }));
     const radarData = [
         {
             category: "CGPA",
-            value: Math.round(
-                (students.reduce((total, student) => total + student.gpa, 0) /
-                    students.length) *
-                    10
-            ),
+            value: Math.round(average(recordedGpa) * 10),
         },
         {
             category: "Attendance",
-            value: Math.round(
-                students.reduce(
-                    (total, student) => total + student.attendance,
-                    0
-                ) / students.length
-            ),
+            value: Math.round(average(recordedAttendance)),
         },
-        { category: "Task Completion", value: 72 },
-        { category: "Session Rate", value: 85 },
-        { category: "Engagement", value: 78 },
+        {
+            category: "Task Completion",
+            value: tasks.length
+                ? Math.round(
+                      (tasks.filter((task) => task.status === "Completed")
+                          .length /
+                          tasks.length) *
+                          100
+                  )
+                : 0,
+        },
+        {
+            category: "Session Rate",
+            value: requests.length
+                ? Math.round(
+                      (requests.filter((request) =>
+                          ["Accepted", "Completed"].includes(request.status)
+                      ).length /
+                          requests.length) *
+                          100
+                  )
+                : 0,
+        },
+        {
+            category: "Engagement",
+            value: students.length
+                ? Math.round(
+                      (engagedStudents.size / students.length) * 100
+                  )
+                : 0,
+        },
     ];
 
     return (

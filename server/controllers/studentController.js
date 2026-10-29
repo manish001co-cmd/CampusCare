@@ -2,133 +2,34 @@ import { User } from "../models/User.js";
 import { Appointment } from "../models/Appointment.js";
 import { Task } from "../models/Task.js";
 
-// Helper: Seed initial student data if none exists
-async function ensureStudentData(user) {
-  const aptCount = await Appointment.countDocuments({ studentUsername: user.username });
-  if (aptCount === 0) {
-    await Appointment.create([
-      {
-        studentId: user._id,
-        studentUsername: user.username,
-        counsellorName: "Mr.Dilp Menariya",
-        type: "academic",
-        title: "Academic stress & midterm preparation check-in",
-        date: "2026-10-28",
-        time: "10:30 AM - 11:30 AM",
-        location: "Counselling Room 2B",
-        status: "Accepted",
-        notes: "Discussed strategies for distributed systems course and time allocation.",
-      },
-      {
-        studentId: user._id,
-        studentUsername: user.username,
-        counsellorName: "Dr. Rajesh Kulkarni",
-        type: "career",
-        title: "Internship guidance & research roadmap",
-        date: "2026-11-04",
-        time: "02:00 PM - 02:45 PM",
-        location: "HOD Office & Video Call",
-        status: "Pending",
-        notes: "Seeking advice on summer AI research applications.",
-      },
-      {
-        studentId: user._id,
-        studentUsername: user.username,
-        counsellorName: "Dr. Sneha Roy",
-        type: "personal",
-        title: "Work-life balance & sleep hygiene consultation",
-        date: "2026-10-12",
-        time: "11:00 AM - 11:45 AM",
-        location: "Student Wellness Center",
-        status: "Completed",
-        notes: "Session completed. Recommended 15-minute mindfulness breaks and sleep tracker.",
-      },
-    ]);
-  }
-
-  const taskCount = await Task.countDocuments({ studentUsername: user.username });
-  if (taskCount === 0) {
-    await Task.create([
-      {
-        studentId: user._id,
-        studentUsername: user.username,
-        title: "Complete weekly study routine plan",
-        assignedBy: "Prof. Priya Nair",
-        dueDate: "2026-10-29",
-        completed: false,
-        priority: "High",
-        category: "Academic",
-      },
-      {
-        studentId: user._id,
-        studentUsername: user.username,
-        title: "Review statistics tutoring resources & submit draft",
-        assignedBy: "Prof. Priya Nair",
-        dueDate: "2026-10-31",
-        completed: true,
-        priority: "Medium",
-        category: "Academic",
-      },
-      {
-        studentId: user._id,
-        studentUsername: user.username,
-        title: "Reflect on career goals for next consultation",
-        assignedBy: "Dr. Rajesh Kulkarni",
-        dueDate: "2026-11-03",
-        completed: false,
-        priority: "Medium",
-        category: "Career",
-      },
-    ]);
-  }
-}
-
 // GET /api/student/dashboard
 export async function getStudentDashboard(req, res) {
   try {
     const user = req.user;
-    await ensureStudentData(user);
-
-    const appointments = await Appointment.find({ studentUsername: user.username }).sort({ createdAt: -1 });
-    const tasks = await Task.find({ studentUsername: user.username }).sort({ completed: 1, dueDate: 1 });
-
-    const performance = {
-      cgpa: user.gpa || 8.6,
-      attendance: user.attendance || 92,
-      totalSessions: appointments.filter((a) => a.status === "Completed").length,
-      trend: [
-        { term: "Sem 1", gpa: 8.2 },
-        { term: "Sem 2", gpa: 8.4 },
-        { term: "Sem 3", gpa: 8.5 },
-        { term: "Sem 4", gpa: 8.6 },
-      ],
-      recentHistory: [
-        {
-          id: 1,
-          date: "Oct 20, 2026",
-          title: "Mid-semester Academic Review",
-          mentor: "Prof. Priya Nair",
-          outcome: "Steady improvement in Algorithms. Study schedule adjusted.",
-          type: "academic",
-        },
-        {
-          id: 2,
-          date: "Oct 12, 2026",
-          title: "Stress Management Consultation",
-          mentor: "Dr. Sneha Roy",
-          outcome: "Wellbeing assessment complete. Follow-up scheduled.",
-          type: "personal",
-        },
-        {
-          id: 3,
-          date: "Sep 25, 2026",
-          title: "Career Pathway Assessment",
-          mentor: "Dr. Rajesh Kulkarni",
-          outcome: "Mapped internship opportunities in cloud and machine learning.",
-          type: "career",
-        },
-      ],
-    };
+    const [appointments, tasks, mentor, counsellors] = await Promise.all([
+      Appointment.find({ studentId: user._id }).sort({ createdAt: -1 }).lean(),
+      Task.find({ studentId: user._id })
+        .sort({ completed: 1, dueDate: 1 })
+        .lean(),
+      user.mentorId
+        ? User.findById(user.mentorId)
+            .select("fullName email designation office")
+            .lean()
+        : User.findOne({
+            role: "teacher",
+            fullName: user.mentor,
+            department: user.department,
+          })
+            .select("fullName email designation office")
+            .lean(),
+      User.find({
+        role: { $in: ["teacher", "hod"] },
+        ...(user.department ? { department: user.department } : {}),
+      })
+        .select("fullName role department designation")
+        .sort({ fullName: 1 })
+        .lean(),
+    ]);
 
     return res.json({
       success: true,
@@ -136,53 +37,110 @@ export async function getStudentDashboard(req, res) {
         id: user._id,
         username: user.username,
         fullName: user.fullName,
-        email: user.email,
-        department: user.department,
-        identifier: user.identifier || "CS2026-084",
-        semester: user.semester || "Semester 5 (Year 3)",
-        phone: user.phone || "+91 98765 43210",
-        emergencyContact: user.emergencyContact || "+91 98765 01234 (Guardian)",
-        preferredMode: user.preferredMode || "In-Person (Room 2B)",
-        bio: user.bio || "Computer Science student passionate about software systems and wellness.",
-        mentor: user.mentor || "Prof. Priya Nair",
+        email: user.email || "",
+        department: user.department || "",
+        identifier: user.identifier || "",
+        semester: user.semester || "",
+        phone: user.phone || "",
+        emergencyContact: user.emergencyContact || "",
+        preferredMode: user.preferredMode || "",
+        bio: user.bio || "",
+        mentor: mentor?.fullName || user.mentor || "",
+        mentorEmail: mentor?.email || "",
+        mentorRole: mentor?.designation || "",
+        mentorOffice: mentor?.office || "",
         role: user.role,
       },
+      counsellors: counsellors.map((counsellor) => ({
+        id: counsellor._id,
+        fullName: counsellor.fullName,
+        role: counsellor.role,
+        department: counsellor.department || "",
+        designation: counsellor.designation || "",
+      })),
       appointments,
       tasks,
-      performance,
+      performance: {
+        cgpa: user.gpa ?? null,
+        attendance: user.attendance ?? null,
+        totalSessionsCompleted: appointments.filter(
+          (appointment) => appointment.status === "Completed"
+        ).length,
+        gpaGrowth: "",
+        attendanceStatus:
+          user.attendance == null
+            ? ""
+            : user.attendance >= 85
+              ? "Above 85% requirement"
+              : "Below 85% requirement",
+        semesterTrend: [],
+        recentHistory: appointments
+          .filter((appointment) => appointment.status === "Completed")
+          .map((appointment) => ({
+            id: appointment._id,
+            date: appointment.date,
+            title: appointment.title,
+            mentor: appointment.counsellorName,
+            outcome: appointment.notes || "",
+            type: appointment.type,
+          })),
+      },
     });
   } catch (error) {
-    console.error("Dashboard data error:", error);
-    return res.status(500).json({ success: false, message: "Error fetching student dashboard", error: error.message });
+    console.error("Student dashboard data error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching student dashboard.",
+    });
   }
 }
 
 // PUT /api/student/profile
 export async function updateStudentProfile(req, res) {
   try {
-    const user = req.user;
-    const { phone, emergencyContact, preferredMode, bio } = req.body;
+    const allowedFields = [
+      "phone",
+      "emergencyContact",
+      "preferredMode",
+      "bio",
+    ];
+    const updates = {};
+
+    for (const field of allowedFields) {
+      if (!Object.hasOwn(req.body, field)) continue;
+      if (typeof req.body[field] !== "string") {
+        return res.status(400).json({
+          success: false,
+          message: `${field} must be a string.`,
+        });
+      }
+      updates[field] = req.body[field].trim();
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Provide at least one profile field to update.",
+      });
+    }
 
     const updatedUser = await User.findByIdAndUpdate(
-      user._id,
-      {
-        $set: {
-          phone: phone !== undefined ? phone : user.phone,
-          emergencyContact: emergencyContact !== undefined ? emergencyContact : user.emergencyContact,
-          preferredMode: preferredMode !== undefined ? preferredMode : user.preferredMode,
-          bio: bio !== undefined ? bio : user.bio,
-        },
-      },
-      { new: true }
+      req.user._id,
+      { $set: updates },
+      { new: true, runValidators: true }
     ).select("-password");
 
     return res.json({
       success: true,
-      message: "Profile updated successfully!",
+      message: "Profile updated successfully.",
       user: updatedUser,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Error updating profile", error: error.message });
+    console.error("Student profile update error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error updating profile.",
+    });
   }
 }
 
@@ -190,32 +148,76 @@ export async function updateStudentProfile(req, res) {
 export async function createAppointment(req, res) {
   try {
     const user = req.user;
-    const { counsellorName, type, title, date, time, location, notes } = req.body;
+    const { counsellorName, type, title, date, time, location, notes } =
+      req.body;
 
-    if (!title || !date || !time) {
-      return res.status(400).json({ success: false, message: "Please provide title, date, and time." });
+    if (
+      typeof title !== "string" ||
+      typeof date !== "string" ||
+      typeof time !== "string" ||
+      !title.trim() ||
+      !date.trim() ||
+      !time.trim()
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a title, date, and time.",
+      });
+    }
+    if (
+      type !== undefined &&
+      !["academic", "career", "personal"].includes(type)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Select a valid counselling type.",
+      });
+    }
+    const selectedCounsellor =
+      typeof counsellorName === "string" && counsellorName.trim()
+        ? counsellorName.trim()
+        : user.mentor;
+    const counsellor = selectedCounsellor
+      ? await User.findOne({
+          fullName: selectedCounsellor,
+          role: { $in: ["teacher", "hod"] },
+          ...(user.department ? { department: user.department } : {}),
+        }).select("_id")
+      : null;
+    if (!counsellor) {
+      return res.status(400).json({
+        success: false,
+        message: "Select an available counsellor from your department.",
+      });
     }
 
     const appointment = await Appointment.create({
       studentId: user._id,
       studentUsername: user.username,
-      counsellorName: counsellorName || "Prof. Priya Nair",
+      counsellorName: selectedCounsellor,
       type: type || "academic",
-      title,
-      date,
-      time,
-      location: location || "Counselling Room 2B",
+      title: title.trim(),
+      date: date.trim(),
+      time: time.trim(),
+      location:
+        typeof location === "string" && location.trim()
+          ? location.trim()
+          : user.preferredMode || "",
       status: "Pending",
-      notes: notes || "",
+      notes: typeof notes === "string" ? notes.trim() : "",
     });
 
     return res.status(201).json({
       success: true,
-      message: "Counselling appointment requested successfully!",
+      message: "Counselling appointment requested successfully.",
       appointment,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Error requesting appointment", error: error.message });
+    console.error("Student appointment creation error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error requesting appointment.",
+    });
   }
 }
 
@@ -223,9 +225,12 @@ export async function createAppointment(req, res) {
 export async function toggleTask(req, res) {
   try {
     const { id } = req.params;
-    const task = await Task.findOne({ _id: id, studentUsername: req.user.username });
+    const task = await Task.findOne({ _id: id, studentId: req.user._id });
     if (!task) {
-      return res.status(404).json({ success: false, message: "Task not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Task not found.",
+      });
     }
 
     task.completed = !task.completed;
@@ -233,10 +238,14 @@ export async function toggleTask(req, res) {
 
     return res.json({
       success: true,
-      message: `Task marked as ${task.completed ? "completed" : "pending"}!`,
+      message: `Task marked as ${task.completed ? "completed" : "pending"}.`,
       task,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Error toggling task", error: error.message });
+    console.error("Student task update error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error updating task.",
+    });
   }
 }

@@ -1,16 +1,26 @@
 import PerformanceStatCard from "./PerformanceStatCard";
 
 export default function ClassPerformanceStats({ students, stats }) {
-    const averageCgpa = (
-        students.reduce((total, student) => total + student.gpa, 0) /
-        students.length
-    ).toFixed(1);
-    const averageAttendance = Math.round(
-        students.reduce((total, student) => total + student.attendance, 0) /
-            students.length
-    );
+    const recordedGpa = students
+        .map((student) => student.gpa)
+        .filter(Number.isFinite);
+    const recordedAttendance = students
+        .map((student) => student.attendance)
+        .filter(Number.isFinite);
+    const averageCgpa = recordedGpa.length
+        ? (
+              recordedGpa.reduce((total, value) => total + value, 0) /
+              recordedGpa.length
+          ).toFixed(1)
+        : "Not recorded";
+    const averageAttendance = recordedAttendance.length
+        ? Math.round(
+              recordedAttendance.reduce((total, value) => total + value, 0) /
+                  recordedAttendance.length
+          )
+        : null;
     const atRiskCount = students.filter(
-        (student) => student.attendance < 75
+        (student) =>         Number.isFinite(student.attendance) && student.attendance < 75
     ).length;
 
     const cards = [
@@ -22,7 +32,10 @@ export default function ClassPerformanceStats({ students, stats }) {
         { label: "Avg Class CGPA", value: averageCgpa, sub: "Out of 10" },
         {
             label: "Avg Attendance",
-            value: `${averageAttendance}%`,
+            value:
+                averageAttendance == null
+                    ? "Not recorded"
+                    : `${averageAttendance}%`,
             sub: "Class average",
         },
         {

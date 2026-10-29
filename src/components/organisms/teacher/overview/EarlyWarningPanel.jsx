@@ -11,7 +11,7 @@ export default function EarlyWarningPanel({ students }) {
             </h2>
             {students.length === 0 ? (
                 <p className="py-6 text-center text-xs text-slate-400">
-                    🎉 All students are above the 75% attendance threshold.
+                    🎉 No students are currently below the 75% attendance threshold.
                 </p>
             ) : (
                 <div className="space-y-2">

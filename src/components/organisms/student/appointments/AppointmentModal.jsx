@@ -9,11 +9,7 @@ export default function AppointmentModal({
     setBookingForm,
     onSubmit,
     successMsg,
-    mentorList = [
-        "Mr. Dilip Menariya (Assigned Mentor · CSE)",
-        "Dr. Rajesh Kulkarni (HOD · CSE)",
-        "Dr. Sneha Roy (Student Wellness Counselor)",
-    ],
+    mentorList = [],
 }) {
     if (!isOpen) return null;
 

@@ -2,6 +2,7 @@ import { useParams, Navigate } from "react-router-dom";
 import StudentDashboard from "./StudentDashboard";
 import TeacherDashboard from "./TeacherDashboard";
 import HodDashboard from "./HodDashboard";
+import AdminDashboard from "./AdminDashboard";
 
 export default function Dashboard() {
     const { role } = useParams();
@@ -18,11 +19,15 @@ export default function Dashboard() {
         return <HodDashboard />;
     }
 
+    if (role === "admin") {
+        return <AdminDashboard />;
+    }
+
     if (!["student", "teacher", "hod", "admin"].includes(role)) {
         return <Navigate to="/" replace />;
     }
 
-    // Placeholder for hod / admin (to be built next)
+    // Placeholder for roles that do not yet have a dashboard.
     return (
         <div className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
             <div className="max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-lg">

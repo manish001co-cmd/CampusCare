@@ -18,7 +18,10 @@ export default function MentoringDashboardBanner({
                 <p className="mt-1 max-w-lg text-sm opacity-75">
                     {stats.assignedStudentsCount} students assigned ·{" "}
                     {stats.pendingAppointmentsCount} appointment requests awaiting ·
-                    Avg class performance {stats.averageClassPerformance}%
+                    Average attendance{" "}
+                    {stats.averageClassPerformance == null
+                        ? "not recorded"
+                        : `${stats.averageClassPerformance}%`}
                 </p>
                 {newRequestCount > 0 && (
                     <button

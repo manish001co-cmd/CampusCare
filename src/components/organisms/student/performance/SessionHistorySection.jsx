@@ -7,9 +7,15 @@ export default function SessionHistorySection({ history }) {
                 Counselling Session History
             </h2>
             <div className="mt-5 space-y-4">
-                {history.map((item) => (
-                    <SessionHistoryCard key={item.id} item={item} />
-                ))}
+                {history.length ? (
+                    history.map((item) => (
+                        <SessionHistoryCard key={item.id} item={item} />
+                    ))
+                ) : (
+                    <p className="text-sm text-slate-500">
+                        No completed counselling sessions recorded.
+                    </p>
+                )}
             </div>
         </section>
     );

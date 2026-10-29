@@ -2,9 +2,11 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { connectDB } from "./config/db.js";
+import adminRoutes from "./routes/adminRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import hodRoutes from "./routes/hodRoutes.js";
 import studentRoutes from "./routes/studentRoutes.js";
+import teacherRoutes from "./routes/teacherRoutes.js";
 import { seedDatabase } from "./seed/seedUsers.js";
 
 const app = express();
@@ -19,9 +21,11 @@ app.use(
 app.use(express.json());
 
 // Routes
+app.use("/api/admin", adminRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/hod", hodRoutes);
 app.use("/api/student", studentRoutes);
+app.use("/api/teacher", teacherRoutes);
 
 app.use("/api", (req, res) => {
   res.status(404).json({

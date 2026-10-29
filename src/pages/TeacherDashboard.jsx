@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import DashboardLayout from "../components/templates/DashboardLayout";
 import TeacherSidebar from "../components/organisms/teacher/TeacherSidebar";
 import TeacherHeader from "../components/organisms/teacher/TeacherHeader";
@@ -15,7 +15,28 @@ const teacherSections = {
     "My Profile": "my-profile",
 };
 
+function getStoredUser() {
+    try {
+        return JSON.parse(localStorage.getItem("campuscare_user") || "null");
+    } catch {
+        return null;
+    }
+}
+
 export default function TeacherDashboard() {
+    const storedUser = getStoredUser();
+    if (
+        !storedUser ||
+        storedUser.role !== "teacher" ||
+        !localStorage.getItem("campuscare_token")
+    ) {
+        return <Navigate to="/" replace />;
+    }
+
+    return <TeacherDashboardContent />;
+}
+
+function TeacherDashboardContent() {
     const navigate = useNavigate();
     const location = useLocation();
     const section = location.pathname.split("/").filter(Boolean)[2];
@@ -42,6 +63,14 @@ export default function TeacherDashboard() {
         navigate("/", { replace: true });
     };
 
+    if (dashboard.isLoading) {
+        return (
+            <main className="flex min-h-screen items-center justify-center bg-slate-50 text-sm text-slate-600">
+                Loading teacher data…
+            </main>
+        );
+    }
+
     return (
         <DashboardLayout
             sidebar={
@@ -60,6 +89,21 @@ export default function TeacherDashboard() {
                 />
             }
         >
+            {dashboard.error && (
+                <div
+                    role="alert"
+                    className="mx-8 mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"
+                >
+                    <span>{dashboard.error}</span>
+                    <button
+                        type="button"
+                        onClick={dashboard.refresh}
+                        className="font-semibold underline"
+                    >
+                        Retry
+                    </button>
+                </div>
+            )}
             <TeacherDashboardSections
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
@@ -74,9 +118,10 @@ export default function TeacherDashboard() {
                 isAssignOpen={dashboard.isAssignOpen}
                 onCloseAssign={dashboard.closeAssign}
                 assignTarget={dashboard.assignTarget}
-                onAssign={(task) => {
-                    dashboard.handleAddTask(task);
-                    dashboard.closeAssign();
+                onAssign={async (task) => {
+                    const saved = await dashboard.handleAddTask(task);
+                    if (saved) dashboard.closeAssign();
+                    return saved;
                 }}
                 onOpenAssign={dashboard.handleOpenAssign}
             />

@@ -29,23 +29,18 @@ export default function AssignTaskModal({
     const updateField = (field, value) =>
         setForm((current) => ({ ...current, [field]: value }));
 
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
         event.preventDefault();
-        if (!form.task.trim()) return;
-        onAssign({
-            id: `tsk-${Date.now()}`,
+        if (!form.studentId || !form.task.trim() || !form.dueDate) return;
+        const saved = await onAssign({
+            studentId: form.studentId,
             studentName: form.studentName,
             task: form.task,
-            assignedDate: new Date().toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-            }),
-            dueDate: form.dueDate || "TBD",
-            status: "Pending",
-            feedback: form.feedback || "Task assigned. Check back for updates.",
+            dueDate: form.dueDate,
+            feedback: form.feedback,
             priority: form.priority,
         });
+        if (!saved) return;
         setSuccessMsg(`Task assigned to ${form.studentName}!`);
         setTimeout(() => {
             setSuccessMsg("");

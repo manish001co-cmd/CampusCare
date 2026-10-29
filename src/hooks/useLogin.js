@@ -80,6 +80,71 @@ export default function useLogin() {
         }
     };
 
+    const handleRegister = async (event, registration) => {
+        event.preventDefault();
+        setError("");
+
+        if (
+            !registration.fullName.trim() ||
+            !registration.username.trim() ||
+            !registration.department.trim() ||
+            !registration.password
+        ) {
+            setError("Please complete all required fields.");
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            const response = await fetch("/api/auth/register", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    fullName: registration.fullName,
+                    username: registration.username,
+                    email: registration.email,
+                    department: registration.department,
+                    identifier: registration.identifier,
+                    password: registration.password,
+                }),
+            });
+
+            const responseBody = await response.text();
+            let data;
+            try {
+                data = JSON.parse(responseBody);
+            } catch {
+                throw new Error(
+                    `The registration server returned an invalid response (HTTP ${response.status}). Please make sure the backend is running and try again.`
+                );
+            }
+
+            if (!response.ok || !data?.success) {
+                throw new Error(data?.message || "Unable to create the account.");
+            }
+            if (!data.token || data.user?.role !== "student") {
+                throw new Error(
+                    "The registration server returned incomplete account details. Please try again later."
+                );
+            }
+
+            localStorage.setItem("campuscare_token", data.token);
+            localStorage.setItem("campuscare_user", JSON.stringify(data.user));
+            navigate("/dashboard/student", {
+                replace: true,
+                state: { user: data.user },
+            });
+        } catch (requestError) {
+            setError(
+                requestError instanceof Error
+                    ? requestError.message
+                    : "Failed to connect to the server. Please try again."
+            );
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const handleForgotPassword = () => {
         setError(
             "Password reset is managed by the administrator. Contact support or use standard demo accounts (password: password123)."
@@ -98,6 +163,7 @@ export default function useLogin() {
         isLoading,
         handleQuickFill,
         handleSubmit,
+        handleRegister,
         handleForgotPassword,
     };
 }

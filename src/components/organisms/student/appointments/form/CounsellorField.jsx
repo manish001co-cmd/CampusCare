@@ -13,6 +13,11 @@ export default function CounsellorField({ value, mentors, onChange }) {
                 onChange={(event) => onChange(event.target.value)}
                 className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs text-slate-800 outline-none focus:border-[#0c4a3b]"
             >
+                {mentors.length === 0 && (
+                    <option value="" disabled>
+                        No counsellors available
+                    </option>
+                )}
                 {mentors.map((mentor) => (
                     <option key={mentor} value={mentor.split(" (")[0]}>
                         {mentor}

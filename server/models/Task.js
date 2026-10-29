@@ -20,6 +20,10 @@ const taskSchema = new mongoose.Schema(
       type: String,
       default: "Mr.Dilip Menariya",
     },
+    assignedById: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
     dueDate: {
       type: String,
       required: true,
@@ -27,6 +31,11 @@ const taskSchema = new mongoose.Schema(
     completed: {
       type: Boolean,
       default: false,
+    },
+    feedback: {
+      type: String,
+      default: "",
+      trim: true,
     },
     priority: {
       type: String,

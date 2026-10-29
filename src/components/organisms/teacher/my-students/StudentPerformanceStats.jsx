@@ -1,8 +1,8 @@
 export default function StudentPerformanceStats({ student }) {
     const attendanceColor =
-        student.attendance < 75
+        student.attendance != null && student.attendance < 75
             ? "text-rose-600"
-            : student.attendance < 80
+            : student.attendance != null && student.attendance < 80
               ? "text-amber-600"
               : "text-emerald-600";
     const statusColor =
@@ -17,12 +17,12 @@ export default function StudentPerformanceStats({ student }) {
     return (
         <div className="flex items-center gap-6 text-center">
             <div>
-                <p className="text-xs font-bold text-slate-900">{student.gpa}</p>
+                <p className="text-xs font-bold text-slate-900">{student.gpa ?? "Not recorded"}</p>
                 <p className="text-[10px] text-slate-500">CGPA</p>
             </div>
             <div>
                 <p className={`text-xs font-bold ${attendanceColor}`}>
-                    {student.attendance}%
+                    {student.attendance == null ? "Not recorded" : `${student.attendance}%`}
                 </p>
                 <p className="text-[10px] text-slate-500">Attendance</p>
             </div>

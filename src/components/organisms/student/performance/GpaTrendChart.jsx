@@ -10,7 +10,13 @@ import {
 } from "recharts";
 
 export default function GpaTrendChart({ semesterTrend = [] }) {
-    if (semesterTrend.length === 0) return null;
+    if (semesterTrend.length === 0) {
+        return (
+            <section className="mb-6 rounded-2xl border border-[#e6e2d8] bg-white p-6 text-sm text-slate-500 shadow-sm">
+                Semester GPA history has not been recorded.
+            </section>
+        );
+    }
 
     return (
         <section className="mb-6 rounded-2xl border border-[#e6e2d8] bg-white p-6 shadow-sm">

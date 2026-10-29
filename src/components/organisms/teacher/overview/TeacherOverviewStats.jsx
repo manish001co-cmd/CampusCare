@@ -26,8 +26,11 @@ export default function TeacherOverviewStats({ stats, onNavigate }) {
         },
         {
             icon: TrendingUp,
-            label: "Avg Performance",
-            value: `${stats.averageClassPerformance}%`,
+            label: "Avg Attendance",
+            value:
+                stats.averageClassPerformance == null
+                    ? "Not recorded"
+                    : `${stats.averageClassPerformance}%`,
             color: "bg-emerald-50 text-emerald-700",
             target: "Performance",
         },

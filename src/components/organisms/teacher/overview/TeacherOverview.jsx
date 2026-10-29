@@ -11,7 +11,10 @@ export default function TeacherOverview({
     requests,
     onNavigate,
 }) {
-    const atRiskStudents = students.filter((student) => student.attendance < 75);
+    const atRiskStudents = students.filter(
+        (student) =>
+            Number.isFinite(student.attendance) && student.attendance < 75
+    );
     const newRequests = requests.filter((request) => request.status === "New");
 
     return (

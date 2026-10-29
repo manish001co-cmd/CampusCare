@@ -419,7 +419,7 @@ function HodDashboardContent({ user }) {
                                         <div>
                                             <div className="mb-2 flex justify-between text-sm">
                                                 <span className="text-slate-600">Average attendance</span>
-                                                <strong>{summary?.averageAttendance ?? 0}%</strong>
+                                                <strong>{summary?.averageAttendance == null ? "Not recorded" : `${summary.averageAttendance}%`}</strong>
                                             </div>
                                             <div className="h-2 overflow-hidden rounded-full bg-slate-100">
                                                 <div className="h-full rounded-full bg-indigo-600" style={{ width: `${Math.min(summary?.averageAttendance || 0, 100)}%` }} />
@@ -428,7 +428,7 @@ function HodDashboardContent({ user }) {
                                         <div>
                                             <div className="mb-2 flex justify-between text-sm">
                                                 <span className="text-slate-600">Average GPA</span>
-                                                <strong>{summary?.averageGpa ?? 0} / 10</strong>
+                                                <strong>{summary?.averageGpa == null ? "Not recorded" : `${summary.averageGpa} / 10`}</strong>
                                             </div>
                                             <div className="h-2 overflow-hidden rounded-full bg-slate-100">
                                                 <div className="h-full rounded-full bg-emerald-500" style={{ width: `${Math.min((summary?.averageGpa || 0) * 10, 100)}%` }} />
@@ -590,8 +590,8 @@ function StudentTable({
                                         <p className="font-semibold text-slate-800">{student.fullName}</p>
                                         <p className="mt-0.5 text-xs text-slate-500">{student.identifier || student.username}</p>
                                     </td>
-                                    <td className="px-5 py-4">{student.attendance}%</td>
-                                    <td className="px-5 py-4">{student.gpa.toFixed(1)}</td>
+                                    <td className="px-5 py-4">{student.attendance == null ? "Not recorded" : `${student.attendance}%`}</td>
+                                    <td className="px-5 py-4">{student.gpa == null ? "Not recorded" : student.gpa.toFixed(1)}</td>
                                     <td className="px-5 py-4">
                                         <div>
                                             <RiskBadge reasons={student.riskReasons} />

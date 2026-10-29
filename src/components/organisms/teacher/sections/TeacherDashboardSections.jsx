@@ -55,7 +55,12 @@ export default function TeacherDashboardSections({
                 />
             )}
             {activeTab === "Performance" && (
-                <TeacherPerformanceView students={students} stats={stats} />
+                <TeacherPerformanceView
+                    students={students}
+                    stats={stats}
+                    tasks={tasks}
+                    requests={requests}
+                />
             )}
             {activeTab === "My Profile" && (
                 <TeacherProfileView teacher={teacher} />

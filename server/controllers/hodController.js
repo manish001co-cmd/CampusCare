@@ -7,10 +7,13 @@ const GPA_RISK_THRESHOLD = 7;
 
 function getStudentRiskReasons(student) {
   const reasons = [];
-  if (student.attendance < ATTENDANCE_RISK_THRESHOLD) {
+  if (
+    Number.isFinite(student.attendance) &&
+    student.attendance < ATTENDANCE_RISK_THRESHOLD
+  ) {
     reasons.push(`Attendance below ${ATTENDANCE_RISK_THRESHOLD}%`);
   }
-  if (student.gpa < GPA_RISK_THRESHOLD) {
+  if (Number.isFinite(student.gpa) && student.gpa < GPA_RISK_THRESHOLD) {
     reasons.push(`GPA below ${GPA_RISK_THRESHOLD}`);
   }
   return reasons;
@@ -71,11 +74,12 @@ export async function getHodDashboard(req, res) {
       }
     }
 
-    const attendanceTotal = students.reduce(
-      (total, student) => total + student.attendance,
-      0
-    );
-    const gpaTotal = students.reduce((total, student) => total + student.gpa, 0);
+    const recordedAttendance = students
+      .map((student) => student.attendance)
+      .filter(Number.isFinite);
+    const recordedGpa = students
+      .map((student) => student.gpa)
+      .filter(Number.isFinite);
 
     return res.json({
       success: true,
@@ -97,15 +101,29 @@ export async function getHodDashboard(req, res) {
         completedSessions: appointments.filter(
           (appointment) => appointment.status === "Completed"
         ).length,
-        averageAttendance: students.length
-          ? Math.round(attendanceTotal / students.length)
-          : 0,
-        averageGpa: students.length
-          ? Number((gpaTotal / students.length).toFixed(1))
-          : 0,
+        averageAttendance: recordedAttendance.length
+          ? Math.round(
+              recordedAttendance.reduce((total, value) => total + value, 0) /
+                recordedAttendance.length
+            )
+          : null,
+        averageGpa: recordedGpa.length
+          ? Number(
+              (
+                recordedGpa.reduce((total, value) => total + value, 0) /
+                recordedGpa.length
+              ).toFixed(1)
+            )
+          : null,
         appointmentTypes,
       },
-      faculty,
+      faculty: faculty.map((member) => ({
+        id: member._id,
+        fullName: member.fullName,
+        username: member.username,
+        email: member.email || "",
+        identifier: member.identifier || "",
+      })),
       students: students.map((student) => ({
         id: student._id,
         fullName: student.fullName,
@@ -191,6 +209,7 @@ export async function assignStudentMentor(req, res) {
     }
 
     student.mentor = faculty.fullName;
+    student.mentorId = faculty._id;
     await student.save();
 
     return res.json({
