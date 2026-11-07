@@ -1,7 +1,7 @@
 import Avatar from "../atoms/Avatar";
 
 export default function TeacherProfilePill({
-    mentorName = "Mr. Dilip Menariya",
+    mentorName = "Demo Teacher One",
     mentorRole = "Assigned Faculty Mentor · CSE",
     mentorOffice = "Room 2B",
     onBookClick,

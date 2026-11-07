@@ -14,7 +14,7 @@ const appointmentSchema = new mongoose.Schema(
     counsellorName: {
       type: String,
       required: true,
-      default: "Mr. Dilip Menariya",
+      default: "Demo Teacher One",
     },
     type: {
       type: String,

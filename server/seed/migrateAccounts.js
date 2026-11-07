@@ -1,9 +1,6 @@
 /**
- * Migration script: update accounts per user request
- *   - HOD demo (hod/password123): rename to Mr. B.L. Pal
- *   - New teacher: cse001 / EMP001 (Mr. Dilip Menariya)
- *   - New teacher: cse002 / EMP002 (Ms. Yukti Tiwari)
- *   - New HOD: hod-cse-001 / EMP000 (Mr. B.L. Pal)
+ * Migration script: keep the seeded demo accounts aligned with the demo-only workflow.
+ * Real user identifiers are intentionally not used anywhere in the project.
  * Run from server/ directory: node seed/migrateAccounts.js
  */
 import dotenv from "dotenv";
@@ -24,87 +21,73 @@ async function run() {
   await connectDB();
   console.log("Connected to DB. Running account migration...\n");
 
-  // ── 1. Update demo HOD (hod) name to Mr. B.L. Pal ─────────────────────────
-  const hodDemo = await User.findOne({ username: "hod" });
+  // ── 1. Keep the demo HOD account aligned with the demo workflow ─────────
+  const hodDemo = await User.findOne({ username: "hod-demo" });
   if (hodDemo) {
-    hodDemo.fullName = "Mr. B.L. Pal";
-    hodDemo.identifier = "HOD-CSE-001";
-    hodDemo.designation = "Professor & Head of Department";
-    hodDemo.office = "Room 101, Administrative Block";
+    hodDemo.fullName = "Demo HOD";
+    hodDemo.identifier = "CSE-HOD-DEMO";
+    hodDemo.designation = "Demo Department Head";
+    hodDemo.office = "Demo Admin Block";
     await hodDemo.save();
-    console.log("✅  hod (demo) → fullName updated to Mr. B.L. Pal");
+    console.log("✅  hod-demo → normalized to demo-only values");
   } else {
-    console.log("⚠️  hod (demo) account not found — skipping");
+    console.log("⚠️  hod-demo account not found — skipping");
   }
 
-  // ── 2. Create / update CSE001 teacher (Mr. Dilip Menariya) ─────────────────
-  const cse001Data = {
-    username: "cse001",
-    password: "EMP001",
+  // ── 2. Create / update demo teacher account 1 ─────────────────────────────
+  const teacherDemoOne = {
+    username: "teacher-demo-1",
+    password: "password123",
     role: "teacher",
-    fullName: "Mr. Dilip Menariya",
-    email: "dilip.menariya.cse@campuscare.edu",
+    fullName: "Demo Teacher One",
+    email: "teacher1.demo@campuscare.edu",
     department: DEPARTMENT,
-    identifier: "CSE001",
-    phone: "+91 98765 11223",
-    designation: "Associate Professor",
-    office: "Room 2B, CSE Faculty Wing",
-    specialization: "Algorithms, academic advising, and student wellbeing",
-    bio: "Faculty mentor supporting students with academic planning and counselling.",
+    identifier: "CSE-TEACHER-01",
+    phone: "+91 90000 00011",
+    designation: "Demo Faculty",
+    office: "Demo Faculty Wing",
+    specialization: "Demo mentoring and workflow preview",
+    bio: "Demo-only teacher role preview for showcasing academic workflows.",
   };
-  const existingCSE001 = await User.findOne({ username: "cse001" });
-  if (existingCSE001) {
-    Object.assign(existingCSE001, { ...cse001Data, password: undefined });
-    await existingCSE001.save();
-    console.log("✅  cse001 teacher → updated");
+  const existingTeacherOne = await User.findOne({ username: "teacher-demo-1" });
+  if (existingTeacherOne) {
+    Object.assign(existingTeacherOne, { ...teacherDemoOne, password: undefined });
+    await existingTeacherOne.save();
+    console.log("✅  teacher-demo-1 → updated");
   } else {
-    await User.create(cse001Data);
-    console.log("✅  cse001 teacher → created (Mr. Dilip Menariya / EMP001)");
+    await User.create(teacherDemoOne);
+    console.log("✅  teacher-demo-1 → created");
   }
 
-  // ── 3. Create / update CSE002 teacher (Ms. Yukti Tiwari) ───────────────────
-  const cse002Data = {
-    username: "cse002",
-    password: "EMP002",
+  // ── 3. Create / update demo teacher account 2 ─────────────────────────────
+  const teacherDemoTwo = {
+    username: "teacher-demo-2",
+    password: "password123",
     role: "teacher",
-    fullName: "Ms. Yukti Tiwari",
-    email: "yukti.tiwari.cse@campuscare.edu",
+    fullName: "Demo Teacher Two",
+    email: "teacher2.demo@campuscare.edu",
     department: DEPARTMENT,
-    identifier: "CSE002",
-    phone: "+91 98765 77889",
-    designation: "Assistant Professor",
-    office: "Room 3A, CSE Faculty Wing",
-    specialization: "Programming fundamentals and first-year mentoring",
-    bio: "Supports first-year students as they transition to university study.",
+    identifier: "CSE-TEACHER-02",
+    phone: "+91 90000 00012",
+    designation: "Demo Faculty",
+    office: "Demo Faculty Wing",
+    specialization: "Demo mentoring and workflow preview",
+    bio: "Demo-only teacher role preview for showcasing academic workflows.",
   };
-  const existingCSE002 = await User.findOne({ username: "cse002" });
-  if (existingCSE002) {
-    Object.assign(existingCSE002, { ...cse002Data, password: undefined });
-    await existingCSE002.save();
-    console.log("✅  cse002 teacher → updated");
+  const existingTeacherTwo = await User.findOne({ username: "teacher-demo-2" });
+  if (existingTeacherTwo) {
+    Object.assign(existingTeacherTwo, { ...teacherDemoTwo, password: undefined });
+    await existingTeacherTwo.save();
+    console.log("✅  teacher-demo-2 → updated");
   } else {
-    await User.create(cse002Data);
-    console.log("✅  cse002 teacher → created (Ms. Yukti Tiwari / EMP002)");
+    await User.create(teacherDemoTwo);
+    console.log("✅  teacher-demo-2 → created");
   }
 
-  // ── 4. Keep the single HOD demo account in sync with the requested profile ─
-  const hodDemoAccount = await User.findOne({ username: "hod" });
-  if (hodDemoAccount) {
-    hodDemoAccount.fullName = "Mr. B.L. Pal";
-    hodDemoAccount.email = "hod.cse@campuscare.edu";
-    hodDemoAccount.department = DEPARTMENT;
-    hodDemoAccount.identifier = "HOD-CSE-001";
-    hodDemoAccount.designation = "Professor & Head of Department";
-    hodDemoAccount.office = "Room 101, Administrative Block";
-    hodDemoAccount.phone = "+91 98765 22334";
-    await hodDemoAccount.save();
-    console.log("✅  hod account → kept as the single HOD record");
-  }
-
-  // ── 5. Remove any stale old-uppercase teacher usernames if present ──────────
-  const staleCount = await User.deleteMany({ username: { $in: ["CSE001", "CSE002", "HOD-CSE-001", "hod-cse-001", "teacher", "teacher2"] } });
+  // ── 4. Remove stale real-user identifiers and old usernames if present ─────
+  const staleCount = await User.deleteMany({ username: { $in: ["legacy-teacher-1", "legacy-teacher-2", "legacy-hod-demo", "teacher-demo-legacy", "hod-demo-legacy"] } });
   if (staleCount.deletedCount > 0) {
-    console.log(`🗑️   Removed ${staleCount.deletedCount} stale uppercase teacher account(s)`);
+    console.log(`🗑️   Removed ${staleCount.deletedCount} stale real-user or legacy account(s)`);
   }
 
   // ── 6. Print final account list ─────────────────────────────────────────────
