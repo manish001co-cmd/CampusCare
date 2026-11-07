@@ -5,21 +5,20 @@ const notificationTypes = {
     info: { icon: "ℹ️", style: "bg-slate-100 text-slate-700" },
 };
 
-export default function NotificationItem({ notification }) {
+export default function NotificationItem({ notification, onMarkRead }) {
     const type = notificationTypes[notification.type] || notificationTypes.info;
 
     return (
         <article
-            className={`flex items-start gap-3 border-b border-slate-50 px-4 py-3 last:border-0 ${
-                notification.read ? "" : "bg-blue-50/50"
-            }`}
+            className={`flex items-start gap-3 border-b border-slate-50 px-4 py-3 last:border-0 ${notification.read ? "" : "bg-blue-50/50"
+                }`}
         >
             <span
                 className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] ${type.style}`}
             >
                 {type.icon}
             </span>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
                 <p className="text-[11px] font-semibold text-slate-800">
                     {notification.title}
                 </p>
@@ -30,6 +29,15 @@ export default function NotificationItem({ notification }) {
                     {notification.time}
                 </p>
             </div>
+            {!notification.read && onMarkRead && (
+                <button
+                    type="button"
+                    onClick={() => onMarkRead(notification.id)}
+                    className="rounded-md border border-slate-200 px-2 py-1 text-[9px] font-semibold text-slate-600 hover:bg-white"
+                >
+                    Mark read
+                </button>
+            )}
         </article>
     );
 }

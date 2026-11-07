@@ -4,6 +4,8 @@ export default function NotificationPanel({
     notifications,
     unreadCount,
     accent,
+    onMarkRead,
+    onMarkAllRead,
 }) {
     return (
         <section
@@ -14,13 +16,24 @@ export default function NotificationPanel({
                 <span className="text-xs font-bold text-slate-800">
                     Notifications
                 </span>
-                {unreadCount > 0 && (
-                    <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${accent.newCount}`}
-                    >
-                        {unreadCount} new
-                    </span>
-                )}
+                <div className="flex items-center gap-2">
+                    {unreadCount > 0 && (
+                        <span
+                            className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${accent.newCount}`}
+                        >
+                            {unreadCount} new
+                        </span>
+                    )}
+                    {unreadCount > 0 && (
+                        <button
+                            type="button"
+                            onClick={onMarkAllRead}
+                            className="text-[10px] font-semibold text-slate-500 hover:text-slate-700"
+                        >
+                            Mark all read
+                        </button>
+                    )}
+                </div>
             </div>
             <div className="max-h-72 overflow-y-auto">
                 {notifications.length === 0 ? (
@@ -32,6 +45,7 @@ export default function NotificationPanel({
                         <NotificationItem
                             key={notification.id}
                             notification={notification}
+                            onMarkRead={onMarkRead}
                         />
                     ))
                 )}

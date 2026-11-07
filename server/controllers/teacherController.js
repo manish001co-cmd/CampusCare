@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { Appointment } from "../models/Appointment.js";
+import { Notification } from "../models/Notification.js";
 import { Task } from "../models/Task.js";
 import { User } from "../models/User.js";
 
@@ -53,26 +54,30 @@ export async function getTeacherDashboard(req, res) {
     };
     const taskQuery = studentIds.length
       ? {
-          studentId: { $in: studentIds },
-          $or: [
-            { assignedById: teacher._id },
-            {
-              assignedBy: teacher.fullName,
-              assignedById: null,
-            },
-          ],
-        }
+        studentId: { $in: studentIds },
+        $or: [
+          { assignedById: teacher._id },
+          {
+            assignedBy: teacher.fullName,
+            assignedById: null,
+          },
+        ],
+      }
       : null;
 
-    const [appointments, tasks] = await Promise.all([
+    const [appointments, tasks, notifications] = await Promise.all([
       studentIds.length
         ? Appointment.find(appointmentQuery)
-            .sort({ createdAt: -1 })
-            .lean()
+          .sort({ createdAt: -1 })
+          .lean()
         : [],
       taskQuery
         ? Task.find(taskQuery).sort({ createdAt: -1 }).lean()
         : [],
+      Notification.find({ userId: teacher._id })
+        .sort({ createdAt: -1 })
+        .limit(25)
+        .lean(),
     ]);
     const studentById = new Map(
       students.map((student) => [student._id.toString(), student])
@@ -85,9 +90,9 @@ export async function getTeacherDashboard(req, res) {
       .filter(Number.isFinite);
     const averageAttendance = attendanceValues.length
       ? Math.round(
-          attendanceValues.reduce((total, attendance) => total + attendance, 0) /
-            attendanceValues.length
-        )
+        attendanceValues.reduce((total, attendance) => total + attendance, 0) /
+        attendanceValues.length
+      )
       : null;
 
     return res.json({
@@ -124,14 +129,14 @@ export async function getTeacherDashboard(req, res) {
           gpa == null && attendance == null
             ? "Not recorded"
             : (attendance != null && attendance < 75) ||
-                (gpa != null && gpa < 6)
-            ? "High Priority"
-            : (attendance != null && attendance < 85) ||
+              (gpa != null && gpa < 6)
+              ? "High Priority"
+              : (attendance != null && attendance < 85) ||
                 (gpa != null && gpa < 7)
-              ? "Needs Support"
-              : gpa != null && gpa >= 8.5
-                ? "Improving"
-                : "Steady";
+                ? "Needs Support"
+                : gpa != null && gpa >= 8.5
+                  ? "Improving"
+                  : "Steady";
 
         return {
           id: student._id,
@@ -161,7 +166,16 @@ export async function getTeacherDashboard(req, res) {
         };
       }),
       tasks: serializedTasks,
-      notifications: [],
+      notifications: notifications.map((notification) => ({
+        id: notification._id,
+        title: notification.title,
+        body: notification.body,
+        type: notification.type,
+        read: notification.read,
+        time: notification.createdAt
+          ? new Date(notification.createdAt).toLocaleString()
+          : "Just now",
+      })),
     });
   } catch (error) {
     console.error("Teacher dashboard data error:", error);
@@ -224,6 +238,17 @@ export async function updateAppointment(req, res) {
     }
 
     await appointment.save();
+
+    const student = await User.findById(appointment.studentId).select("fullName");
+    if (student) {
+      await Notification.create({
+        userId: appointment.studentId,
+        type: "appointment",
+        title: "Appointment update",
+        body: `Your appointment "${appointment.title}" was ${appointment.status}.`,
+      });
+    }
+
     return res.json({
       success: true,
       message: "Appointment updated successfully.",
@@ -291,6 +316,13 @@ export async function createTask(req, res) {
       feedback: typeof feedback === "string" ? feedback.trim() : "",
     });
 
+    await Notification.create({
+      userId: student._id,
+      type: "task",
+      title: "New task assigned",
+      body: `A new task was assigned: ${title.trim()}`,
+    });
+
     return res.status(201).json({
       success: true,
       message: "Task assigned successfully.",
@@ -340,6 +372,16 @@ export async function completeTask(req, res) {
     task.completed = true;
     await task.save();
     const student = await User.findById(task.studentId).select("fullName");
+
+    if (student) {
+      await Notification.create({
+        userId: student._id,
+        type: "task",
+        title: "Task completed",
+        body: `Task completed: ${task.title}`,
+      });
+    }
+
     return res.json({
       success: true,
       message: "Task marked as complete.",

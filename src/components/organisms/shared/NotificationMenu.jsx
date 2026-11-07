@@ -2,6 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { Bell } from "lucide-react";
 import NotificationPanel from "./NotificationPanel";
 
+async function getToken() {
+    const token = localStorage.getItem("campuscare_token");
+    if (!token) return "";
+    return token;
+}
+
 const accents = {
     emerald: {
         count: "bg-emerald-500",
@@ -18,9 +24,62 @@ export default function NotificationMenu({
     accent = "blue",
 }) {
     const [isOpen, setIsOpen] = useState(false);
+    const [menuNotifications, setMenuNotifications] = useState(notifications);
     const menuRef = useRef(null);
-    const unreadCount = notifications.filter((item) => !item.read).length;
+    const unreadCount = menuNotifications.filter((item) => !item.read).length;
     const color = accents[accent] || accents.blue;
+
+    useEffect(() => {
+        setMenuNotifications(notifications);
+    }, [notifications]);
+
+    const handleMarkRead = async (notificationId) => {
+        const token = await getToken();
+        if (!token) return;
+
+        try {
+            const response = await fetch(`/api/notifications/${notificationId}/read`, {
+                method: "PATCH",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            const payload = await response.json().catch(() => null);
+            if (!response.ok || !payload?.success) {
+                throw new Error(payload?.message || "Unable to mark notification as read.");
+            }
+            setMenuNotifications((current) =>
+                current.map((item) =>
+                    item.id === notificationId ? { ...item, read: true } : item
+                )
+            );
+        } catch (error) {
+            console.error("Mark notification read failed:", error);
+        }
+    };
+
+    const handleMarkAllRead = async () => {
+        const token = await getToken();
+        if (!token) return;
+
+        try {
+            const response = await fetch("/api/notifications/read-all", {
+                method: "PATCH",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            const payload = await response.json().catch(() => null);
+            if (!response.ok || !payload?.success) {
+                throw new Error(payload?.message || "Unable to mark all notifications as read.");
+            }
+            setMenuNotifications((current) =>
+                current.map((item) => ({ ...item, read: true }))
+            );
+        } catch (error) {
+            console.error("Mark all notifications read failed:", error);
+        }
+    };
 
     useEffect(() => {
         const closeOnOutsideClick = (event) => {
@@ -53,9 +112,11 @@ export default function NotificationMenu({
             </button>
             {isOpen && (
                 <NotificationPanel
-                    notifications={notifications}
+                    notifications={menuNotifications}
                     unreadCount={unreadCount}
                     accent={color}
+                    onMarkRead={handleMarkRead}
+                    onMarkAllRead={handleMarkAllRead}
                 />
             )}
         </div>

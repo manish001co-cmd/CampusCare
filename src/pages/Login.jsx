@@ -15,31 +15,44 @@ const roles = [
         value: "student",
         label: "Student",
         description: "Profile & counselling",
-        demoUser: "student",
+        demoUser: "demo-student",
     },
     {
         value: "teacher",
         label: "Teacher",
         description: "Students & appointments",
-        demoUser: "teacher",
+        demoUser: "demo-teacher",
     },
     {
         value: "hod",
         label: "HOD",
         description: "Department management",
-        demoUser: "hod",
+        demoUser: "demo-hod",
     },
     {
         value: "admin",
         label: "Admin",
         description: "System administration",
-        demoUser: "admin",
     },
 ];
 
 export default function Login() {
     const login = useLogin();
     const [isRegistering, setIsRegistering] = useState(false);
+
+    const handleRoleSelect = (roleValue) => {
+        const selectedRole = roles.find((role) => role.value === roleValue);
+        login.setSelectedRole(roleValue);
+        login.setError("");
+
+        if (selectedRole?.demoUser) {
+            login.setUsername(selectedRole.demoUser);
+            login.setPassword("password123");
+        } else {
+            login.setUsername("");
+            login.setPassword("");
+        }
+    };
 
     return (
         <AuthLayout heroPanel={<LoginHeroPanel />}>
@@ -53,30 +66,27 @@ export default function Login() {
                 />
             ) : (
                 <>
-            <RoleSelector
-                roles={roles}
-                selectedRole={login.selectedRole}
-                onSelectRole={(role) => {
-                    login.setSelectedRole(role);
-                    login.setError("");
-                }}
-            />
-            <DemoFillBar
-                roles={roles}
-                selectedRole={login.selectedRole}
-                onQuickFill={login.handleQuickFill}
-            />
-            <LoginForm
-                username={login.username}
-                setUsername={login.setUsername}
-                password={login.password}
-                setPassword={login.setPassword}
-                selectedRole={login.selectedRole}
-                onSubmit={login.handleSubmit}
-                isLoading={login.isLoading}
-                error={login.error}
-                onForgotPassword={login.handleForgotPassword}
-            />
+                    <RoleSelector
+                        roles={roles}
+                        selectedRole={login.selectedRole}
+                        onSelectRole={handleRoleSelect}
+                    />
+                    <DemoFillBar
+                        roles={roles.filter((role) => role.demoUser)}
+                        selectedRole={login.selectedRole}
+                        onQuickFill={login.handleQuickFill}
+                    />
+                    <LoginForm
+                        username={login.username}
+                        setUsername={login.setUsername}
+                        password={login.password}
+                        setPassword={login.setPassword}
+                        selectedRole={login.selectedRole}
+                        onSubmit={login.handleSubmit}
+                        isLoading={login.isLoading}
+                        error={login.error}
+                        onForgotPassword={login.handleForgotPassword}
+                    />
                 </>
             )}
             <div className="mt-4 text-center text-xs text-slate-600">

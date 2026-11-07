@@ -8,7 +8,7 @@ const ACCOUNT_ROLES = ["student", "teacher", "hod", "admin"];
 export async function getAdminDashboard(req, res) {
   try {
     const [users, appointmentCount, completedSessions] = await Promise.all([
-      User.find({})
+      User.find({ isDemo: { $ne: true } })
         .select(
           "username role fullName email department identifier phone bio designation office specialization createdAt"
         )
@@ -24,27 +24,10 @@ export async function getAdminDashboard(req, res) {
       hod: 0,
       admin: 0,
     };
-    const departments = new Map();
 
     for (const user of users) {
       roleCounts[user.role] = (roleCounts[user.role] || 0) + 1;
-      if (!user.department || user.role === "admin") continue;
-
-      const current = departments.get(user.department) || {
-        name: user.department,
-        students: 0,
-        faculty: 0,
-        hods: 0,
-      };
-      if (user.role === "student") current.students += 1;
-      if (user.role === "teacher") current.faculty += 1;
-      if (user.role === "hod") current.hods += 1;
-      departments.set(user.department, current);
     }
-
-    const departmentList = [...departments.values()].sort((a, b) =>
-      a.name.localeCompare(b.name)
-    );
 
     return res.json({
       success: true,
@@ -52,10 +35,11 @@ export async function getAdminDashboard(req, res) {
         fullName: req.user.fullName,
         email: req.user.email,
         identifier: req.user.identifier,
+        phone: req.user.phone || "",
+        bio: req.user.bio || "",
       },
       summary: {
         totalAccounts: users.length,
-        totalDepartments: departmentList.length,
         studentCount: roleCounts.student,
         teacherCount: roleCounts.teacher,
         facultyCount: roleCounts.teacher,
@@ -64,7 +48,7 @@ export async function getAdminDashboard(req, res) {
         appointmentCount,
         completedSessions,
       },
-      departments: departmentList,
+      departments: [],
       users: users.map((user) => ({
         id: user._id,
         username: user.username,
@@ -213,12 +197,14 @@ export async function updateTeacher(req, res) {
     if (!mongoose.isValidObjectId(userId)) {
       return res.status(400).json({
         success: false,
-        message: "A valid teacher account is required.",
+        message: "A valid account is required.",
       });
     }
 
     const body = req.body ?? {};
     const allowedFields = [
+      "username",
+      "password",
       "fullName",
       "email",
       "department",
@@ -228,8 +214,11 @@ export async function updateTeacher(req, res) {
       "designation",
       "office",
       "specialization",
+      "emergencyContact",
+      "preferredMode",
     ];
     const updates = {};
+
     for (const field of allowedFields) {
       if (!Object.hasOwn(body, field)) continue;
       if (typeof body[field] !== "string") {
@@ -238,73 +227,103 @@ export async function updateTeacher(req, res) {
           message: `${field} must be a string.`,
         });
       }
-      updates[field] = body[field].trim();
+      const value = body[field].trim();
+      if (field === "username") {
+        if (!value || value.length < 3) {
+          return res.status(400).json({
+            success: false,
+            message: "Username must be at least 3 characters long.",
+          });
+        }
+        updates.username = value.toLowerCase();
+        continue;
+      }
+      if (field === "password") {
+        if (!value || value.length < 4) {
+          return res.status(400).json({
+            success: false,
+            message: "Password must be at least 4 characters long.",
+          });
+        }
+        updates.password = value;
+        continue;
+      }
+      if (field === "fullName" && !value) {
+        return res.status(400).json({
+          success: false,
+          message: "Full name cannot be empty.",
+        });
+      }
+      if (field === "department" && !value) {
+        return res.status(400).json({
+          success: false,
+          message: "Department cannot be empty.",
+        });
+      }
+      updates[field] = value;
     }
 
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({
         success: false,
-        message: "Provide at least one teacher detail to update.",
-      });
-    }
-    if (
-      (Object.hasOwn(updates, "fullName") && !updates.fullName) ||
-      (Object.hasOwn(updates, "department") && !updates.department)
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "Teacher name and department cannot be empty.",
-      });
-    }
-    if (
-      updates.email &&
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(updates.email)
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "Enter a valid teacher email address.",
+        message: "Provide at least one account detail to update.",
       });
     }
 
-    const currentTeacher = await User.findOne({
-      _id: userId,
-      role: "teacher",
-    })
-      .select("fullName")
-      .lean();
-    if (!currentTeacher) {
+    const currentUser = await User.findById(userId).select("_id role fullName username");
+    if (!currentUser) {
       return res.status(404).json({
         success: false,
-        message: "Teacher account not found.",
+        message: "Account not found.",
       });
     }
 
-    const teacher = await User.findOneAndUpdate(
-      { _id: userId, role: "teacher" },
-      { $set: updates },
-      { new: true, runValidators: true }
-    ).select("username role fullName email department identifier");
+    const previousFullName = currentUser.fullName;
+
+    if (updates.username && updates.username !== currentUser.username) {
+      const usernameTaken = await User.findOne({
+        username: updates.username,
+        _id: { $ne: userId },
+      }).select("_id").lean();
+      if (usernameTaken) {
+        return res.status(409).json({
+          success: false,
+          message: "That username is already in use.",
+        });
+      }
+    }
+
+    if (updates.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(updates.email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Enter a valid email address.",
+      });
+    }
+
+    Object.assign(currentUser, updates);
+    await currentUser.save();
 
     if (
+      currentUser.role === "teacher" &&
       updates.fullName &&
-      updates.fullName !== currentTeacher.fullName
+      updates.fullName !== previousFullName
     ) {
       await Promise.all([
         User.updateMany(
           {
             role: "student",
-            mentor: currentTeacher.fullName,
+            mentor: previousFullName,
             mentorId: null,
           },
           { $set: { mentor: updates.fullName } }
         ),
         Appointment.updateMany(
-          { counsellorName: currentTeacher.fullName },
+          { counsellorName: previousFullName },
           { $set: { counsellorName: updates.fullName } }
         ),
         Task.updateMany(
           {
-            assignedBy: currentTeacher.fullName,
+            assignedBy: previousFullName,
             assignedById: null,
           },
           { $set: { assignedBy: updates.fullName } }
@@ -314,27 +333,27 @@ export async function updateTeacher(req, res) {
 
     return res.json({
       success: true,
-      message: "Teacher information updated successfully.",
+      message: `${currentUser.role === "hod" ? "HOD" : currentUser.role === "admin" ? "Admin" : currentUser.role[0].toUpperCase() + currentUser.role.slice(1)} information updated successfully.`,
       user: {
-        id: teacher._id,
-        username: teacher.username,
-        role: teacher.role,
-        fullName: teacher.fullName,
-        email: teacher.email || "",
-        department: teacher.department || "",
-        identifier: teacher.identifier || "",
-        phone: teacher.phone || "",
-        bio: teacher.bio || "",
-        designation: teacher.designation || "",
-        office: teacher.office || "",
-        specialization: teacher.specialization || "",
+        id: currentUser._id,
+        username: currentUser.username,
+        role: currentUser.role,
+        fullName: currentUser.fullName,
+        email: currentUser.email || "",
+        department: currentUser.department || "",
+        identifier: currentUser.identifier || "",
+        phone: currentUser.phone || "",
+        bio: currentUser.bio || "",
+        designation: currentUser.designation || "",
+        office: currentUser.office || "",
+        specialization: currentUser.specialization || "",
       },
     });
   } catch (error) {
-    console.error("Teacher information update error:", error);
+    console.error("Account update error:", error);
     return res.status(500).json({
       success: false,
-      message: "Error updating teacher information.",
+      message: "Error updating account information.",
     });
   }
 }

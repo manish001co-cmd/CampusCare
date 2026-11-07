@@ -20,6 +20,7 @@ export default function StudentHeader({
                     fullName={student?.fullName || "Student"}
                     identifier={student?.identifier || ""}
                     onLogout={onLogout}
+                    profile={student || {}}
                 />
             </div>
         </header>

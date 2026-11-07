@@ -18,7 +18,7 @@ const taskSchema = new mongoose.Schema(
     },
     assignedBy: {
       type: String,
-      default: "Mr.Dilip Menariya",
+      default: "Mr. Dilip Menariya",
     },
     assignedById: {
       type: mongoose.Schema.Types.ObjectId,

@@ -23,31 +23,6 @@ function getToken() {
     return token;
 }
 
-function makeNotifications(requests, tasks) {
-    return [
-        ...requests
-            .filter((request) => request.status === "New")
-            .map((request) => ({
-                id: `appointment-${request.id}`,
-                type: "appointment",
-                title: "New appointment request",
-                body: `${request.studentName} requested: ${request.title}`,
-                time: request.date,
-                read: false,
-            })),
-        ...tasks
-            .filter((task) => task.status === "Completed")
-            .map((task) => ({
-                id: `task-${task.id}`,
-                type: "task",
-                title: "Task completed",
-                body: `${task.studentName} completed: "${task.task}"`,
-                time: task.assignedDate,
-                read: false,
-            })),
-    ].slice(0, 10);
-}
-
 export default function useTeacherDashboard() {
     const [teacher, setTeacher] = useState({});
     const [stats, setStats] = useState({
@@ -77,9 +52,7 @@ export default function useTeacherDashboard() {
         setStudents(data.students || []);
         setRequests(data.requests || []);
         setTasks(data.tasks || []);
-        setNotifications(
-            makeNotifications(data.requests || [], data.tasks || [])
-        );
+        setNotifications(data.notifications || []);
     }, []);
 
     useEffect(() => {
@@ -98,9 +71,7 @@ export default function useTeacherDashboard() {
                 setStudents(data.students || []);
                 setRequests(data.requests || []);
                 setTasks(data.tasks || []);
-                setNotifications(
-                    makeNotifications(data.requests || [], data.tasks || [])
-                );
+                setNotifications(data.notifications || []);
             } catch (requestError) {
                 if (isCurrent) {
                     setError(

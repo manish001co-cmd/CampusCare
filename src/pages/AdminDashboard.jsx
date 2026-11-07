@@ -5,6 +5,8 @@ import {
     Building2,
     Check,
     CircleAlert,
+    Eye,
+    EyeOff,
     GraduationCap,
     LogOut,
     Pencil,
@@ -18,9 +20,10 @@ import {
     X,
 } from "lucide-react";
 import Avatar from "../components/atoms/Avatar";
+import UserProfileMenu from "../components/organisms/shared/UserProfileMenu";
 import useAdminDashboard from "../hooks/useAdminDashboard";
 
-const sections = ["Overview", "Accounts", "Departments"];
+const sections = ["Overview", "Accounts"];
 const accountRoles = ["student", "teacher", "hod", "admin"];
 
 function getStoredUser() {
@@ -53,6 +56,7 @@ function AdminDashboardContent({ user }) {
         useAdminDashboard();
     const [activeSection, setActiveSection] = useState("Overview");
     const [search, setSearch] = useState("");
+    const [roleFilter, setRoleFilter] = useState("all");
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [workingAccountId, setWorkingAccountId] = useState("");
@@ -73,12 +77,55 @@ function AdminDashboardContent({ user }) {
         specialization: "",
     });
 
-    const visibleUsers = useMemo(() => {
-        const accounts = dashboard?.users || [];
+    const demoAccounts = useMemo(() => {
         const query = search.trim().toLowerCase();
-        if (!query) return accounts;
-        return accounts.filter((account) =>
-            [
+        return [
+            {
+                id: "demo-student",
+                username: "demo-student",
+                role: "student",
+                fullName: "Demo Student",
+                email: "demo.student@campuscare.edu",
+                department: "Computer Science & Engineering",
+                identifier: "CSE-2026-DEMO",
+                phone: "+91 90000 00001",
+                bio: "Demo-only student workflow preview for role structure and counselling flow.",
+                isDemo: true,
+            },
+            {
+                id: "demo-teacher",
+                username: "demo-teacher",
+                role: "teacher",
+                fullName: "Demo Teacher",
+                email: "demo.teacher@campuscare.edu",
+                department: "Computer Science & Engineering",
+                identifier: "CSE-DEMO-TEACHER",
+                phone: "+91 90000 00002",
+                designation: "Demo Faculty",
+                office: "Demo Hall",
+                specialization: "Demo mentoring workflow",
+                bio: "Demo-only teacher workflow preview for student oversight and mentoring.",
+                isDemo: true,
+            },
+            {
+                id: "demo-hod",
+                username: "demo-hod",
+                role: "hod",
+                fullName: "Demo HOD",
+                email: "demo.hod@campuscare.edu",
+                department: "Computer Science & Engineering",
+                identifier: "HOD-CSE-DEMO",
+                phone: "+91 90000 00003",
+                designation: "Demo Department Head",
+                office: "Demo Office",
+                bio: "Demo-only HOD workflow preview for department oversight and mentoring.",
+                isDemo: true,
+            },
+        ].filter((account) => {
+            const matchesRole = roleFilter === "all" || account.role === roleFilter;
+            if (!matchesRole) return false;
+            if (!query) return true;
+            return [
                 account.fullName,
                 account.username,
                 account.email,
@@ -87,9 +134,31 @@ function AdminDashboardContent({ user }) {
                 account.identifier,
             ]
                 .filter(Boolean)
-                .some((value) => value.toLowerCase().includes(query))
-        );
-    }, [dashboard?.users, search]);
+                .some((value) => value.toLowerCase().includes(query));
+        });
+    }, [roleFilter, search]);
+
+    const visibleUsers = useMemo(() => {
+        const accounts = dashboard?.users || [];
+        const query = search.trim().toLowerCase();
+        const filteredByText = !query
+            ? accounts
+            : accounts.filter((account) =>
+                [
+                    account.fullName,
+                    account.username,
+                    account.email,
+                    account.role,
+                    account.department,
+                    account.identifier,
+                ]
+                    .filter(Boolean)
+                    .some((value) => value.toLowerCase().includes(query))
+            );
+
+        if (roleFilter === "all") return filteredByText;
+        return filteredByText.filter((account) => account.role === roleFilter);
+    }, [dashboard?.users, roleFilter, search]);
 
     const visibleDepartments = useMemo(() => {
         const departments = dashboard?.departments || [];
@@ -165,7 +234,7 @@ function AdminDashboardContent({ user }) {
             setActionError(
                 requestError instanceof Error
                     ? requestError.message
-                    : "Unable to update teacher information."
+                    : "Unable to update account information."
             );
             return false;
         } finally {
@@ -262,11 +331,10 @@ function AdminDashboardContent({ user }) {
                             <button
                                 key={section}
                                 onClick={() => selectSection(section)}
-                                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition ${
-                                    activeSection === section
-                                        ? "bg-indigo-50 text-indigo-800"
-                                        : "text-slate-600 hover:bg-slate-50"
-                                }`}
+                                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition ${activeSection === section
+                                    ? "bg-indigo-50 text-indigo-800"
+                                    : "text-slate-600 hover:bg-slate-50"
+                                    }`}
                             >
                                 <Icon size={18} />
                                 {section}
@@ -305,20 +373,11 @@ function AdminDashboardContent({ user }) {
                             >
                                 <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
                             </button>
-                            <div className="hidden items-center gap-2 sm:flex">
-                                <Avatar name={dashboard?.profile?.fullName || user.fullName} size="sm" variant="purple" />
-                                <span className="max-w-40 truncate text-xs font-semibold text-slate-700">
-                                    {dashboard?.profile?.fullName || user.fullName}
-                                </span>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={logout}
-                                className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
-                            >
-                                <LogOut size={15} />
-                                <span className="hidden sm:inline">Sign out</span>
-                            </button>
+                            <UserProfileMenu
+                                user={dashboard?.profile || user}
+                                onLogout={logout}
+                                accent="indigo"
+                            />
                         </div>
                     </div>
                     <nav className="mt-3 flex gap-1 overflow-x-auto lg:hidden">
@@ -326,11 +385,10 @@ function AdminDashboardContent({ user }) {
                             <button
                                 key={section}
                                 onClick={() => selectSection(section)}
-                                className={`shrink-0 rounded-lg px-3 py-2 text-xs font-semibold ${
-                                    activeSection === section
-                                        ? "bg-indigo-50 text-indigo-800"
-                                        : "text-slate-500 hover:bg-slate-50"
-                                }`}
+                                className={`shrink-0 rounded-lg px-3 py-2 text-xs font-semibold ${activeSection === section
+                                    ? "bg-indigo-50 text-indigo-800"
+                                    : "text-slate-500 hover:bg-slate-50"
+                                    }`}
                             >
                                 {section}
                             </button>
@@ -346,11 +404,10 @@ function AdminDashboardContent({ user }) {
                         </div>
                     )}
                     {(actionMessage || actionError) && (
-                        <div role="status" className={`mb-5 rounded-xl border px-4 py-3 text-sm ${
-                            actionError
-                                ? "border-rose-200 bg-rose-50 text-rose-800"
-                                : "border-emerald-200 bg-emerald-50 text-emerald-800"
-                        }`}>
+                        <div role="status" className={`mb-5 rounded-xl border px-4 py-3 text-sm ${actionError
+                            ? "border-rose-200 bg-rose-50 text-rose-800"
+                            : "border-emerald-200 bg-emerald-50 text-emerald-800"
+                            }`}>
                             {actionError || actionMessage}
                         </div>
                     )}
@@ -362,26 +419,13 @@ function AdminDashboardContent({ user }) {
                                 title={`Welcome, ${dashboard?.profile?.fullName?.split(" ")[0] || "Administrator"}`}
                                 description="Institution-wide account and department overview."
                             />
-                            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                                 <StatCard label="Total accounts" value={summary?.totalAccounts ?? 0} detail="All registered roles" icon={Users} tone="indigo" />
-                                <StatCard label="Departments" value={summary?.totalDepartments ?? 0} detail="With institutional accounts" icon={Building2} tone="blue" />
                                 <StatCard label="Students" value={summary?.studentCount ?? 0} detail={`${summary?.facultyCount ?? 0} faculty accounts`} icon={GraduationCap} tone="emerald" />
                                 <StatCard label="Support sessions" value={summary?.completedSessions ?? 0} detail={`${summary?.appointmentCount ?? 0} appointments total`} icon={Activity} tone="amber" />
                             </div>
 
-                            <div className="mt-6 grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
-                                <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                                    <div className="mb-4 flex items-center justify-between gap-4">
-                                        <div>
-                                            <h2 className="font-bold">Department directory</h2>
-                                            <p className="mt-1 text-xs text-slate-500">Account counts from current system records</p>
-                                        </div>
-                                        <button onClick={() => selectSection("Departments")} className="text-xs font-semibold text-indigo-700 hover:text-indigo-900">
-                                            View departments
-                                        </button>
-                                    </div>
-                                    <DepartmentTable departments={(dashboard?.departments || []).slice(0, 5)} />
-                                </section>
+                            <div className="mt-6 grid gap-5 xl:grid-cols-[1fr]">
                                 <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                                     <h2 className="font-bold">Accounts by role</h2>
                                     <p className="mt-1 text-xs text-slate-500">Current registered accounts</p>
@@ -478,11 +522,26 @@ function AdminDashboardContent({ user }) {
                                 </form>
                             )}
 
-                            <div className="mb-4">
+                            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                 <SearchBox value={search} onChange={setSearch} placeholder="Search accounts" />
+                                <label className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 shadow-sm">
+                                    <span className="font-medium">Role</span>
+                                    <select
+                                        value={roleFilter}
+                                        onChange={(event) => setRoleFilter(event.target.value)}
+                                        className="bg-transparent font-medium text-slate-800 outline-none"
+                                    >
+                                        <option value="all">All</option>
+                                        <option value="admin">Admin</option>
+                                        <option value="teacher">Teachers</option>
+                                        <option value="hod">HOD</option>
+                                        <option value="student">Students</option>
+                                    </select>
+                                </label>
                             </div>
                             <AccountTable
                                 users={visibleUsers}
+                                demoUsers={demoAccounts}
                                 onUpdateTeacher={handleUpdateTeacher}
                                 onDeleteAccount={handleDeleteAccount}
                                 workingAccountId={workingAccountId}
@@ -490,18 +549,6 @@ function AdminDashboardContent({ user }) {
                         </>
                     )}
 
-                    {activeSection === "Departments" && (
-                        <>
-                            <PageHeading
-                                eyebrow="Institution structure"
-                                title="Departments"
-                                description="Departments and account coverage derived from registered users."
-                            >
-                                <SearchBox value={search} onChange={setSearch} placeholder="Search departments" />
-                            </PageHeading>
-                            <DepartmentTable departments={visibleDepartments} />
-                        </>
-                    )}
                 </main>
             </div>
         </div>
@@ -585,18 +632,22 @@ function EmptyState({ children }) {
 
 function AccountTable({
     users,
+    demoUsers,
     onUpdateTeacher,
     onDeleteAccount,
     workingAccountId,
 }) {
     const [editingId, setEditingId] = useState("");
     const [editForm, setEditForm] = useState(null);
+    const [showPassword, setShowPassword] = useState(false);
 
-    if (!users.length) return <EmptyState>No accounts match your search.</EmptyState>;
+    const visibleRows = [...demoUsers, ...users];
+    if (!visibleRows.length) return <EmptyState>No accounts match your search.</EmptyState>;
 
     const startEditing = (account) => {
         setEditingId(account.id);
         setEditForm({
+            username: account.username || "",
             fullName: account.fullName || "",
             email: account.email || "",
             department: account.department || "",
@@ -606,24 +657,36 @@ function AccountTable({
             designation: account.designation || "",
             office: account.office || "",
             specialization: account.specialization || "",
+            password: "",
         });
+        setShowPassword(false);
     };
 
     const saveTeacher = async (event, userId) => {
         event.preventDefault();
-        const didUpdate = await onUpdateTeacher(userId, editForm);
+        const payload = { ...editForm };
+        if (!payload.password) delete payload.password;
+        const didUpdate = await onUpdateTeacher(userId, payload);
         if (didUpdate) {
             setEditingId("");
             setEditForm(null);
+            setShowPassword(false);
         }
     };
+
+    const numberedUsers = users.reduce((accumulator, account) => {
+        const existingCount = accumulator.filter((item) => item.role === account.role).length;
+        accumulator.push({ ...account, serial: String(existingCount + 1).padStart(2, "0") });
+        return accumulator;
+    }, []);
 
     return (
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="overflow-x-auto">
-                <table className="w-full min-w-[900px] text-left text-sm">
+                <table className="w-full min-w-245 text-left text-sm">
                     <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                         <tr>
+                            <th className="px-5 py-3 font-semibold">S.No</th>
                             <th className="px-5 py-3 font-semibold">Account</th>
                             <th className="px-5 py-3 font-semibold">Role</th>
                             <th className="px-5 py-3 font-semibold">Department</th>
@@ -633,217 +696,248 @@ function AccountTable({
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {users.map((account) => (
-                            <Fragment key={account.id}>
-                            <tr>
-                                <td className="px-5 py-4">
-                                    <div className="flex items-center gap-3">
-                                        <Avatar name={account.fullName} size="sm" variant={account.role === "admin" ? "purple" : "slate"} />
-                                        <div>
-                                            <p className="font-semibold text-slate-800">{account.fullName}</p>
-                                            <p className="mt-0.5 text-xs text-slate-500">@{account.username}</p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td className="px-5 py-4">
-                                    <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold capitalize text-indigo-800">
-                                        {account.role === "hod" ? "HOD" : account.role}
-                                    </span>
-                                </td>
-                                <td className="px-5 py-4 text-slate-600">{account.department || "—"}</td>
-                                <td className="px-5 py-4 text-slate-600">{account.identifier || "—"}</td>
-                                <td className="px-5 py-4 text-slate-600">{account.email || "—"}</td>
-                                <td className="px-5 py-4">
-                                    <div className="flex items-center gap-2">
-                                        {account.role === "teacher" && (
-                                            <button
-                                                type="button"
-                                                onClick={() => startEditing(account)}
-                                                disabled={workingAccountId === account.id}
-                                                aria-label={`Edit ${account.fullName}`}
-                                                title="Edit teacher information"
-                                                className="rounded-lg border border-slate-200 p-2 text-indigo-700 hover:bg-indigo-50 disabled:opacity-50"
-                                            >
-                                                <Pencil size={15} />
-                                            </button>
-                                        )}
-                                        {account.role !== "admin" && (
-                                            <button
-                                                type="button"
-                                                onClick={() => onDeleteAccount(account)}
-                                                disabled={workingAccountId === account.id}
-                                                aria-label={`Delete ${account.fullName}`}
-                                                title="Delete account"
-                                                className="rounded-lg border border-rose-200 p-2 text-rose-700 hover:bg-rose-50 disabled:opacity-50"
-                                            >
-                                                {workingAccountId === account.id ? (
-                                                    <RefreshCw size={15} className="animate-spin" />
-                                                ) : (
-                                                    <Trash2 size={15} />
-                                                )}
-                                            </button>
-                                        )}
-                                    </div>
-                                </td>
-                            </tr>
-                            {editingId === account.id && editForm && (
-                                <tr className="bg-indigo-50/50">
-                                    <td colSpan={6} className="px-5 py-4">
-                                        <form
-                                            onSubmit={(event) => saveTeacher(event, account.id)}
-                                            className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
-                                        >
-                                            <label className="text-xs font-semibold text-slate-600">
-                                                Full name
-                                                <input
-                                                    required
-                                                    value={editForm.fullName}
-                                                    onChange={(event) =>
-                                                        setEditForm((current) => ({
-                                                            ...current,
-                                                            fullName: event.target.value,
-                                                        }))
-                                                    }
-                                                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-normal text-slate-800"
-                                                />
-                                            </label>
-                                            <label className="text-xs font-semibold text-slate-600">
-                                                Email
-                                                <input
-                                                    type="email"
-                                                    value={editForm.email}
-                                                    onChange={(event) =>
-                                                        setEditForm((current) => ({
-                                                            ...current,
-                                                            email: event.target.value,
-                                                        }))
-                                                    }
-                                                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-normal text-slate-800"
-                                                />
-                                            </label>
-                                            <label className="text-xs font-semibold text-slate-600">
-                                                Department
-                                                <input
-                                                    required
-                                                    value={editForm.department}
-                                                    onChange={(event) =>
-                                                        setEditForm((current) => ({
-                                                            ...current,
-                                                            department: event.target.value,
-                                                        }))
-                                                    }
-                                                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-normal text-slate-800"
-                                                />
-                                            </label>
-                                            <label className="text-xs font-semibold text-slate-600">
-                                                Identifier
-                                                <input
-                                                    value={editForm.identifier}
-                                                    onChange={(event) =>
-                                                        setEditForm((current) => ({
-                                                            ...current,
-                                                            identifier: event.target.value,
-                                                        }))
-                                                    }
-                                                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-normal text-slate-800"
-                                                />
-                                            </label>
-                                            <label className="text-xs font-semibold text-slate-600">
-                                                Phone
-                                                <input
-                                                    value={editForm.phone}
-                                                    onChange={(event) =>
-                                                        setEditForm((current) => ({
-                                                            ...current,
-                                                            phone: event.target.value,
-                                                        }))
-                                                    }
-                                                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-normal text-slate-800"
-                                                />
-                                            </label>
-                                            <label className="text-xs font-semibold text-slate-600">
-                                                Designation
-                                                <input
-                                                    value={editForm.designation}
-                                                    onChange={(event) =>
-                                                        setEditForm((current) => ({
-                                                            ...current,
-                                                            designation: event.target.value,
-                                                        }))
-                                                    }
-                                                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-normal text-slate-800"
-                                                />
-                                            </label>
-                                            <label className="text-xs font-semibold text-slate-600">
-                                                Office
-                                                <input
-                                                    value={editForm.office}
-                                                    onChange={(event) =>
-                                                        setEditForm((current) => ({
-                                                            ...current,
-                                                            office: event.target.value,
-                                                        }))
-                                                    }
-                                                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-normal text-slate-800"
-                                                />
-                                            </label>
-                                            <label className="text-xs font-semibold text-slate-600">
-                                                Specialization
-                                                <input
-                                                    value={editForm.specialization}
-                                                    onChange={(event) =>
-                                                        setEditForm((current) => ({
-                                                            ...current,
-                                                            specialization: event.target.value,
-                                                        }))
-                                                    }
-                                                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-normal text-slate-800"
-                                                />
-                                            </label>
-                                            <label className="text-xs font-semibold text-slate-600 xl:col-span-2">
-                                                Bio
-                                                <input
-                                                    value={editForm.bio}
-                                                    onChange={(event) =>
-                                                        setEditForm((current) => ({
-                                                            ...current,
-                                                            bio: event.target.value,
-                                                        }))
-                                                    }
-                                                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-normal text-slate-800"
-                                                />
-                                            </label>
-                                            <div className="flex items-center gap-2 sm:col-span-2 xl:col-span-4">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setEditingId("");
-                                                        setEditForm(null);
-                                                    }}
-                                                    disabled={workingAccountId === account.id}
-                                                    className="ml-auto inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-white disabled:opacity-50"
-                                                >
-                                                    <X size={14} /> Cancel
-                                                </button>
-                                                <button
-                                                    type="submit"
-                                                    disabled={workingAccountId === account.id}
-                                                    className="inline-flex items-center gap-1 rounded-lg bg-indigo-700 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-800 disabled:opacity-50"
-                                                >
-                                                    {workingAccountId === account.id ? (
-                                                        <RefreshCw size={14} className="animate-spin" />
-                                                    ) : (
-                                                        <Save size={14} />
+                        {visibleRows.map((account, index) => {
+                            const isDemo = Boolean(account.isDemo);
+                            const serial = String(index + 1).padStart(2, "0");
+                            return (
+                                <Fragment key={account.id}>
+                                    <tr>
+                                        <td className="px-5 py-4 font-semibold text-slate-700">{serial}</td>
+                                        <td className="px-5 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <Avatar name={account.fullName} size="sm" variant={account.role === "admin" ? "purple" : "slate"} />
+                                                <div>
+                                                    <p className="font-semibold text-slate-800">{account.fullName}</p>
+                                                    <p className="mt-0.5 text-xs text-slate-500">@{account.username}</p>
+                                                    {isDemo && (
+                                                        <span className="mt-1 inline-flex rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700">
+                                                            Demo
+                                                        </span>
                                                     )}
-                                                    Save changes
-                                                </button>
+                                                </div>
                                             </div>
-                                        </form>
-                                    </td>
-                                </tr>
-                            )}
-                            </Fragment>
-                        ))}
+                                        </td>
+                                        <td className="px-5 py-4">
+                                            <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold capitalize text-indigo-800">
+                                                {account.role === "hod" ? "HOD" : account.role}
+                                            </span>
+                                        </td>
+                                        <td className="px-5 py-4 text-slate-600">{account.department || "—"}</td>
+                                        <td className="px-5 py-4 text-slate-600">{account.identifier || "—"}</td>
+                                        <td className="px-5 py-4 text-slate-600">{account.email || "—"}</td>
+                                        <td className="px-5 py-4">
+                                            <div className="flex items-center gap-2">
+                                                {!isDemo && (
+                                                    <>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => startEditing(account)}
+                                                            disabled={workingAccountId === account.id}
+                                                            aria-label={`Edit ${account.fullName}`}
+                                                            title="Edit account information"
+                                                            className="rounded-lg border border-slate-200 p-2 text-indigo-700 hover:bg-indigo-50 disabled:opacity-50"
+                                                        >
+                                                            <Pencil size={15} />
+                                                        </button>
+                                                        {account.role !== "admin" && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => onDeleteAccount(account)}
+                                                                disabled={workingAccountId === account.id}
+                                                                aria-label={`Delete ${account.fullName}`}
+                                                                title="Delete account"
+                                                                className="rounded-lg border border-rose-200 p-2 text-rose-700 hover:bg-rose-50 disabled:opacity-50"
+                                                            >
+                                                                {workingAccountId === account.id ? (
+                                                                    <RefreshCw size={15} className="animate-spin" />
+                                                                ) : (
+                                                                    <Trash2 size={15} />
+                                                                )}
+                                                            </button>
+                                                        )}
+                                                    </>
+                                                )}
+                                                {isDemo && (
+                                                    <span className="rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-700">
+                                                        Preview
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {editingId === account.id && editForm && (
+                                        <tr className="bg-indigo-50/50">
+                                            <td colSpan={7} className="px-5 py-4">
+                                                <form
+                                                    onSubmit={(event) => saveTeacher(event, account.id)}
+                                                    className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+                                                >
+                                                    <label className="text-xs font-semibold text-slate-600">
+                                                        Username
+                                                        <input
+                                                            required
+                                                            value={editForm.username}
+                                                            onChange={(event) =>
+                                                                setEditForm((current) => ({
+                                                                    ...current,
+                                                                    username: event.target.value,
+                                                                }))
+                                                            }
+                                                            className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-normal text-slate-800"
+                                                        />
+                                                    </label>
+                                                    <label className="text-xs font-semibold text-slate-600">
+                                                        Password
+                                                        <div className="relative mt-1">
+                                                            <input
+                                                                type={showPassword ? "text" : "password"}
+                                                                value={editForm.password}
+                                                                onChange={(event) =>
+                                                                    setEditForm((current) => ({
+                                                                        ...current,
+                                                                        password: event.target.value,
+                                                                    }))
+                                                                }
+                                                                placeholder="Current password is protected — enter a new one to change it"
+                                                                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 pr-10 text-sm font-normal text-slate-800"
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setShowPassword((current) => !current)}
+                                                                className="absolute inset-y-0 right-3 flex items-center text-slate-500 hover:text-slate-700"
+                                                                aria-label={showPassword ? "Hide password" : "Show password"}
+                                                                title={showPassword ? "Hide password" : "Show password"}
+                                                            >
+                                                                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                                                            </button>
+                                                        </div>
+                                                    </label>
+                                                    <label className="text-xs font-semibold text-slate-600">
+                                                        Full name
+                                                        <input
+                                                            required
+                                                            value={editForm.fullName}
+                                                            onChange={(event) =>
+                                                                setEditForm((current) => ({
+                                                                    ...current,
+                                                                    fullName: event.target.value,
+                                                                }))
+                                                            }
+                                                            className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-normal text-slate-800"
+                                                        />
+                                                    </label>
+                                                    <label className="text-xs font-semibold text-slate-600">
+                                                        Email
+                                                        <input
+                                                            type="email"
+                                                            value={editForm.email}
+                                                            onChange={(event) =>
+                                                                setEditForm((current) => ({
+                                                                    ...current,
+                                                                    email: event.target.value,
+                                                                }))
+                                                            }
+                                                            className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-normal text-slate-800"
+                                                        />
+                                                    </label>
+                                                    <label className="text-xs font-semibold text-slate-600">
+                                                        Department
+                                                        <input
+                                                            required
+                                                            value={editForm.department}
+                                                            onChange={(event) =>
+                                                                setEditForm((current) => ({
+                                                                    ...current,
+                                                                    department: event.target.value,
+                                                                }))
+                                                            }
+                                                            className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-normal text-slate-800"
+                                                        />
+                                                    </label>
+                                                    <label className="text-xs font-semibold text-slate-600">
+                                                        Identifier
+                                                        <input
+                                                            value={editForm.identifier}
+                                                            onChange={(event) =>
+                                                                setEditForm((current) => ({
+                                                                    ...current,
+                                                                    identifier: event.target.value,
+                                                                }))
+                                                            }
+                                                            className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-normal text-slate-800"
+                                                        />
+                                                    </label>
+                                                    <label className="text-xs font-semibold text-slate-600">
+                                                        Phone
+                                                        <input
+                                                            value={editForm.phone}
+                                                            onChange={(event) =>
+                                                                setEditForm((current) => ({
+                                                                    ...current,
+                                                                    phone: event.target.value,
+                                                                }))
+                                                            }
+                                                            className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-normal text-slate-800"
+                                                        />
+                                                    </label>
+                                                    <label className="text-xs font-semibold text-slate-600">
+                                                        Designation
+                                                        <input
+                                                            value={editForm.designation}
+                                                            onChange={(event) =>
+                                                                setEditForm((current) => ({
+                                                                    ...current,
+                                                                    designation: event.target.value,
+                                                                }))
+                                                            }
+                                                            className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-normal text-slate-800"
+                                                        />
+                                                    </label>
+                                                    <label className="text-xs font-semibold text-slate-600 xl:col-span-2">
+                                                        Bio
+                                                        <input
+                                                            value={editForm.bio}
+                                                            onChange={(event) =>
+                                                                setEditForm((current) => ({
+                                                                    ...current,
+                                                                    bio: event.target.value,
+                                                                }))
+                                                            }
+                                                            className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-normal text-slate-800"
+                                                        />
+                                                    </label>
+                                                    <div className="flex items-center gap-2 sm:col-span-2 xl:col-span-4">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setEditingId("");
+                                                                setEditForm(null);
+                                                            }}
+                                                            disabled={workingAccountId === account.id}
+                                                            className="ml-auto inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-white disabled:opacity-50"
+                                                        >
+                                                            <X size={14} /> Cancel
+                                                        </button>
+                                                        <button
+                                                            type="submit"
+                                                            disabled={workingAccountId === account.id}
+                                                            className="inline-flex items-center gap-1 rounded-lg bg-indigo-700 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-800 disabled:opacity-50"
+                                                        >
+                                                            {workingAccountId === account.id ? (
+                                                                <RefreshCw size={14} className="animate-spin" />
+                                                            ) : (
+                                                                <Save size={14} />
+                                                            )}
+                                                            Save changes
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </Fragment>
+                            );
+                        })}
                     </tbody>
                 </table>
             </div>
@@ -856,7 +950,7 @@ function DepartmentTable({ departments }) {
     return (
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="overflow-x-auto">
-                <table className="w-full min-w-[650px] text-left text-sm">
+                <table className="w-full min-w-162.5 text-left text-sm">
                     <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                         <tr>
                             <th className="px-5 py-3 font-semibold">Department</th>
@@ -874,11 +968,10 @@ function DepartmentTable({ departments }) {
                                 <td className="px-5 py-4">{department.faculty}</td>
                                 <td className="px-5 py-4">{department.hods}</td>
                                 <td className="px-5 py-4">
-                                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                                        department.hods > 0
-                                            ? "bg-emerald-50 text-emerald-700"
-                                            : "bg-amber-50 text-amber-800"
-                                    }`}>
+                                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${department.hods > 0
+                                        ? "bg-emerald-50 text-emerald-700"
+                                        : "bg-amber-50 text-amber-800"
+                                        }`}>
                                         {department.hods > 0 ? "HOD assigned" : "No HOD"}
                                     </span>
                                 </td>

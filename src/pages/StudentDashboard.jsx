@@ -57,6 +57,7 @@ function StudentDashboardContent() {
             ? ""
             : "Your session has expired. Please sign in again."
     );
+    const [notifications, setNotifications] = useState([]);
     const [reloadKey, setReloadKey] = useState(0);
     const profileState = useStudentProfile();
     const taskState = useStudentTasks();
@@ -128,6 +129,7 @@ function StudentDashboardContent() {
                 setTasks(data.tasks || []);
                 setPerformance(data.performance || null);
                 setCounsellors(data.counsellors || []);
+                setNotifications(data.notifications || []);
                 setBookingForm((current) => ({
                     ...current,
                     counsellorName:
@@ -135,6 +137,7 @@ function StudentDashboardContent() {
                         data.counsellors?.[0]?.fullName ||
                         "",
                 }));
+                // notifications are rendered from the API response payload below
             } catch (requestError) {
                 if (isCurrent) {
                     setDashboardError(
@@ -242,29 +245,11 @@ function StudentDashboardContent() {
                 <StudentHeader
                     activeTab={activeTab}
                     student={{
+                        ...profile,
                         fullName: profile.fullName,
                         identifier: profile.identifier,
                     }}
-                    notifications={[
-                        ...appointments.map((appointment) => ({
-                            id: `appointment-${appointment._id}`,
-                            type: "appointment",
-                            title: `Appointment ${appointment.status}`,
-                            body: `${appointment.title} with ${appointment.counsellorName}`,
-                            time: appointment.date,
-                            read: false,
-                        })),
-                        ...tasks.map((task) => ({
-                            id: `task-${task._id}`,
-                            type: "task",
-                            title: task.completed
-                                ? "Task completed"
-                                : "Task assigned",
-                            body: task.title,
-                            time: task.dueDate,
-                            read: false,
-                        })),
-                    ].slice(0, 10)}
+                    notifications={notifications}
                     onLogout={handleLogout}
                 />
             }

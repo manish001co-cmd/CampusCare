@@ -1,5 +1,6 @@
 import { User } from "../models/User.js";
 import { Appointment } from "../models/Appointment.js";
+import { Notification } from "../models/Notification.js";
 import { Task } from "../models/Task.js";
 
 // GET /api/student/dashboard
@@ -13,15 +14,15 @@ export async function getStudentDashboard(req, res) {
         .lean(),
       user.mentorId
         ? User.findById(user.mentorId)
-            .select("fullName email designation office")
-            .lean()
+          .select("fullName email designation office")
+          .lean()
         : User.findOne({
-            role: "teacher",
-            fullName: user.mentor,
-            department: user.department,
-          })
-            .select("fullName email designation office")
-            .lean(),
+          role: "teacher",
+          fullName: user.mentor,
+          department: user.department,
+        })
+          .select("fullName email designation office")
+          .lean(),
       User.find({
         role: { $in: ["teacher", "hod"] },
         ...(user.department ? { department: user.department } : {}),
@@ -30,6 +31,11 @@ export async function getStudentDashboard(req, res) {
         .sort({ fullName: 1 })
         .lean(),
     ]);
+
+    const notifications = await Notification.find({ userId: user._id })
+      .sort({ createdAt: -1 })
+      .limit(25)
+      .lean();
 
     return res.json({
       success: true,
@@ -60,6 +66,16 @@ export async function getStudentDashboard(req, res) {
       })),
       appointments,
       tasks,
+      notifications: notifications.map((notification) => ({
+        id: notification._id,
+        title: notification.title,
+        body: notification.body,
+        type: notification.type,
+        read: notification.read,
+        time: notification.createdAt
+          ? new Date(notification.createdAt).toLocaleString()
+          : "Just now",
+      })),
       performance: {
         cgpa: user.gpa ?? null,
         attendance: user.attendance ?? null,
@@ -179,10 +195,10 @@ export async function createAppointment(req, res) {
         : user.mentor;
     const counsellor = selectedCounsellor
       ? await User.findOne({
-          fullName: selectedCounsellor,
-          role: { $in: ["teacher", "hod"] },
-          ...(user.department ? { department: user.department } : {}),
-        }).select("_id")
+        fullName: selectedCounsellor,
+        role: { $in: ["teacher", "hod"] },
+        ...(user.department ? { department: user.department } : {}),
+      }).select("_id")
       : null;
     if (!counsellor) {
       return res.status(400).json({
@@ -206,6 +222,15 @@ export async function createAppointment(req, res) {
       status: "Pending",
       notes: typeof notes === "string" ? notes.trim() : "",
     });
+
+    if (counsellor) {
+      await Notification.create({
+        userId: counsellor._id,
+        type: "appointment",
+        title: "New appointment request",
+        body: `${user.fullName} requested: ${title.trim()}`,
+      });
+    }
 
     return res.status(201).json({
       success: true,
@@ -235,6 +260,23 @@ export async function toggleTask(req, res) {
 
     task.completed = !task.completed;
     await task.save();
+
+    const teacher = await User.findOne({
+      role: "teacher",
+      $or: [
+        { _id: req.user.mentorId },
+        { fullName: req.user.mentor, department: req.user.department, mentorId: null },
+      ],
+    }).select("_id fullName");
+
+    if (teacher) {
+      await Notification.create({
+        userId: teacher._id,
+        type: "task",
+        title: "Student task update",
+        body: `${req.user.fullName} marked task as ${task.completed ? "completed" : "pending"}: ${task.title}`,
+      });
+    }
 
     return res.json({
       success: true,

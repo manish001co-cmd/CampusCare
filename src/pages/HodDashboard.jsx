@@ -17,6 +17,7 @@ import {
     Users,
 } from "lucide-react";
 import Avatar from "../components/atoms/Avatar";
+import UserProfileMenu from "../components/organisms/shared/UserProfileMenu";
 import useHodDashboard from "../hooks/useHodDashboard";
 
 const sections = ["Overview", "Students", "Faculty", "Counselling"];
@@ -35,10 +36,10 @@ function formatDate(date) {
     return Number.isNaN(parsedDate.getTime())
         ? date
         : parsedDate.toLocaleDateString(undefined, {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-          });
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+        });
 }
 
 function PageHeading({ eyebrow, title, description, children }) {
@@ -269,11 +270,10 @@ function HodDashboardContent({ user }) {
                             <button
                                 key={section}
                                 onClick={() => selectSection(section)}
-                                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition ${
-                                    activeSection === section
+                                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition ${activeSection === section
                                         ? "bg-indigo-50 text-indigo-800"
                                         : "text-slate-600 hover:bg-slate-50"
-                                }`}
+                                    }`}
                             >
                                 <Icon size={18} />
                                 {section}
@@ -312,20 +312,11 @@ function HodDashboardContent({ user }) {
                             >
                                 <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
                             </button>
-                            <div className="hidden items-center gap-2 sm:flex">
-                                <Avatar name={profile?.fullName || user.fullName} size="sm" variant="purple" />
-                                <span className="max-w-40 truncate text-xs font-semibold text-slate-700">
-                                    {profile?.fullName || user.fullName}
-                                </span>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={logout}
-                                className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
-                            >
-                                <LogOut size={15} />
-                                <span className="hidden sm:inline">Sign out</span>
-                            </button>
+                            <UserProfileMenu
+                                user={profile || user}
+                                onLogout={logout}
+                                accent="indigo"
+                            />
                         </div>
                     </div>
                     <nav className="mt-3 flex gap-1 overflow-x-auto lg:hidden">
@@ -333,11 +324,10 @@ function HodDashboardContent({ user }) {
                             <button
                                 key={section}
                                 onClick={() => selectSection(section)}
-                                className={`shrink-0 rounded-lg px-3 py-2 text-xs font-semibold ${
-                                    activeSection === section
+                                className={`shrink-0 rounded-lg px-3 py-2 text-xs font-semibold ${activeSection === section
                                         ? "bg-indigo-50 text-indigo-800"
                                         : "text-slate-500 hover:bg-slate-50"
-                                }`}
+                                    }`}
                             >
                                 {section}
                             </button>
@@ -357,11 +347,10 @@ function HodDashboardContent({ user }) {
                     {(actionMessage || actionError) && (
                         <div
                             role="status"
-                            className={`mb-5 rounded-xl border px-4 py-3 text-sm ${
-                                actionError
+                            className={`mb-5 rounded-xl border px-4 py-3 text-sm ${actionError
                                     ? "border-rose-200 bg-rose-50 text-rose-800"
                                     : "border-emerald-200 bg-emerald-50 text-emerald-800"
-                            }`}
+                                }`}
                         >
                             {actionError || actionMessage}
                         </div>
@@ -672,15 +661,14 @@ function AppointmentTable({ appointments }) {
                                 <td className="px-5 py-4 capitalize text-slate-600">{appointment.type}</td>
                                 <td className="px-5 py-4 whitespace-nowrap text-slate-600">{formatDate(appointment.date)} · {appointment.time}</td>
                                 <td className="px-5 py-4">
-                                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                                        appointment.status === "Completed"
+                                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${appointment.status === "Completed"
                                             ? "bg-emerald-50 text-emerald-700"
                                             : appointment.status === "Pending"
-                                              ? "bg-amber-50 text-amber-800"
-                                              : appointment.status === "Rejected"
-                                                ? "bg-rose-50 text-rose-700"
-                                                : "bg-blue-50 text-blue-700"
-                                    }`}>
+                                                ? "bg-amber-50 text-amber-800"
+                                                : appointment.status === "Rejected"
+                                                    ? "bg-rose-50 text-rose-700"
+                                                    : "bg-blue-50 text-blue-700"
+                                        }`}>
                                         {appointment.status}
                                     </span>
                                 </td>
