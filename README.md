@@ -189,7 +189,7 @@ http://localhost:5000
 
 ## Demo Accounts
 
-The project includes seeded demo and real role accounts for quick testing.
+The project includes seeded demo accounts for quick testing and role previews.
 
 | Role | Username | Password |
 | --- | --- | --- |
@@ -197,9 +197,6 @@ The project includes seeded demo and real role accounts for quick testing.
 | Student Demo | demo-student | password123 |
 | Teacher Demo | demo-teacher | password123 |
 | HOD Demo | demo-hod | password123 |
-| Real HOD | HOD-CSE-001 | EMP000 |
-| Real Teacher 1 | CSE001 | EMP001 |
-| Real Teacher 2 | CSE002 | EMP002 |
 
 The seeded student IDs follow the format:
 
