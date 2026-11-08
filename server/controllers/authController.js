@@ -111,6 +111,13 @@ export async function login(req, res) {
 // POST /api/auth/register
 export async function registerStudent(req, res) {
   try {
+    if (!req.user || req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Student accounts can only be created by an administrator.",
+      });
+    }
+
     const { username, password, fullName, email, department, identifier } =
       req.body;
 

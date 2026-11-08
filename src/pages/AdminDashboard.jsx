@@ -122,7 +122,7 @@ function AdminDashboardContent({ user }) {
                 isDemo: true,
             },
         ].filter((account) => {
-            const matchesRole = roleFilter === "all" || account.role === roleFilter;
+            const matchesRole = roleFilter === "all" || roleFilter === "demo" || account.role === roleFilter;
             if (!matchesRole) return false;
             if (!query) return true;
             return [
@@ -157,6 +157,7 @@ function AdminDashboardContent({ user }) {
             );
 
         if (roleFilter === "all") return filteredByText;
+        if (roleFilter === "demo") return [];
         return filteredByText.filter((account) => account.role === roleFilter);
     }, [dashboard?.users, roleFilter, search]);
 
@@ -532,6 +533,7 @@ function AdminDashboardContent({ user }) {
                                         className="bg-transparent font-medium text-slate-800 outline-none"
                                     >
                                         <option value="all">All</option>
+                                        <option value="demo">Demo</option>
                                         <option value="admin">Admin</option>
                                         <option value="teacher">Teachers</option>
                                         <option value="hod">HOD</option>

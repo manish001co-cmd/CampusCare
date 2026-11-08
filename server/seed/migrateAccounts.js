@@ -21,73 +21,64 @@ async function run() {
   await connectDB();
   console.log("Connected to DB. Running account migration...\n");
 
-  // ── 1. Keep the demo HOD account aligned with the demo workflow ─────────
-  const hodDemo = await User.findOne({ username: "hod-demo" });
+  // ── 1. Keep a single demo HOD account aligned with the demo workflow ─────
+  const hodDemo = await User.findOne({ username: "demo-hod" });
   if (hodDemo) {
     hodDemo.fullName = "Demo HOD";
-    hodDemo.identifier = "CSE-HOD-DEMO";
+    hodDemo.identifier = "HOD-CSE-DEMO";
     hodDemo.designation = "Demo Department Head";
-    hodDemo.office = "Demo Admin Block";
+    hodDemo.office = "Demo Office";
     await hodDemo.save();
-    console.log("✅  hod-demo → normalized to demo-only values");
+    console.log("✅  demo-hod → normalized to the single demo HOD profile");
   } else {
-    console.log("⚠️  hod-demo account not found — skipping");
+    console.log("⚠️  demo-hod account not found — skipping");
   }
 
-  // ── 2. Create / update demo teacher account 1 ─────────────────────────────
-  const teacherDemoOne = {
-    username: "teacher-demo-1",
+  // ── 2. Keep a single demo teacher account ─────────────────────────────────
+  const teacherDemo = {
+    username: "demo-teacher",
     password: "password123",
     role: "teacher",
-    fullName: "Demo Teacher One",
-    email: "teacher1.demo@campuscare.edu",
+    fullName: "Demo Teacher",
+    email: "demo.teacher@campuscare.edu",
     department: DEPARTMENT,
-    identifier: "CSE-TEACHER-01",
-    phone: "+91 90000 00011",
+    identifier: "CSE-DEMO-TEACHER",
+    phone: "+91 90000 00002",
     designation: "Demo Faculty",
-    office: "Demo Faculty Wing",
-    specialization: "Demo mentoring and workflow preview",
-    bio: "Demo-only teacher role preview for showcasing academic workflows.",
+    office: "Demo Hall",
+    specialization: "Demo mentoring workflow",
+    bio: "Demo-only teacher workflow preview for student oversight and mentoring.",
   };
-  const existingTeacherOne = await User.findOne({ username: "teacher-demo-1" });
-  if (existingTeacherOne) {
-    Object.assign(existingTeacherOne, { ...teacherDemoOne, password: undefined });
-    await existingTeacherOne.save();
-    console.log("✅  teacher-demo-1 → updated");
+  const existingTeacher = await User.findOne({ username: "demo-teacher" });
+  if (existingTeacher) {
+    Object.assign(existingTeacher, { ...teacherDemo, password: undefined });
+    await existingTeacher.save();
+    console.log("✅  demo-teacher → updated");
   } else {
-    await User.create(teacherDemoOne);
-    console.log("✅  teacher-demo-1 → created");
+    await User.create(teacherDemo);
+    console.log("✅  demo-teacher → created");
   }
 
-  // ── 3. Create / update demo teacher account 2 ─────────────────────────────
-  const teacherDemoTwo = {
-    username: "teacher-demo-2",
-    password: "password123",
-    role: "teacher",
-    fullName: "Demo Teacher Two",
-    email: "teacher2.demo@campuscare.edu",
-    department: DEPARTMENT,
-    identifier: "CSE-TEACHER-02",
-    phone: "+91 90000 00012",
-    designation: "Demo Faculty",
-    office: "Demo Faculty Wing",
-    specialization: "Demo mentoring and workflow preview",
-    bio: "Demo-only teacher role preview for showcasing academic workflows.",
-  };
-  const existingTeacherTwo = await User.findOne({ username: "teacher-demo-2" });
-  if (existingTeacherTwo) {
-    Object.assign(existingTeacherTwo, { ...teacherDemoTwo, password: undefined });
-    await existingTeacherTwo.save();
-    console.log("✅  teacher-demo-2 → updated");
-  } else {
-    await User.create(teacherDemoTwo);
-    console.log("✅  teacher-demo-2 → created");
-  }
-
-  // ── 4. Remove stale real-user identifiers and old usernames if present ─────
-  const staleCount = await User.deleteMany({ username: { $in: ["legacy-teacher-1", "legacy-teacher-2", "legacy-hod-demo", "teacher-demo-legacy", "hod-demo-legacy"] } });
+  // ── 3. Remove duplicate demo accounts and legacy usernames ────────────────
+  const staleCount = await User.deleteMany({
+    username: {
+      $in: [
+        "teacher-demo-1",
+        "teacher-demo-2",
+        "hod-demo",
+        "teacher",
+        "teacher2",
+        "hod",
+        "demo-teacher-legacy",
+        "demo-hod-legacy",
+        "legacy-teacher-1",
+        "legacy-teacher-2",
+        "legacy-hod-demo",
+      ],
+    },
+  });
   if (staleCount.deletedCount > 0) {
-    console.log(`🗑️   Removed ${staleCount.deletedCount} stale real-user or legacy account(s)`);
+    console.log(`🗑️   Removed ${staleCount.deletedCount} duplicate or legacy demo account(s)`);
   }
 
   // ── 6. Print final account list ─────────────────────────────────────────────
